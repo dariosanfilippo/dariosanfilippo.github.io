@@ -10,3 +10,10 @@ kramdown:
   syntax_highlighter: rouge
 
 title: Dario Sanfilippo
+
+navbar-links:
+  About Me: "aboutme"
+  Resources:
+    - Beautiful Jekyll: "https://dariosanfilippo.com"
+    - Learn markdown: "https:dariosanfilippo.com/"
+  Author's home: "https://dariosanfilippo.com"
