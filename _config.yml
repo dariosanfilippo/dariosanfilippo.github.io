@@ -12,6 +12,7 @@ kramdown:
 title: Dario Sanfilippo
 
 header_pages:
+  About: "about"
 
 navbar-links:
   About Me: "ABOUT.md"
