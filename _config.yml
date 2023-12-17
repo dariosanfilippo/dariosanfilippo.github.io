@@ -17,3 +17,5 @@ navbar-links:
     - Beautiful Jekyll: "https://dariosanfilippo.com"
     - Learn markdown: "https:dariosanfilippo.com/"
   Author's home: "https://dariosanfilippo.com"
+
+theme: jekyll-theme-minimal
