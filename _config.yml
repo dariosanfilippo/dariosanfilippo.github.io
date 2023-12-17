@@ -11,6 +11,8 @@ kramdown:
 
 title: Dario Sanfilippo
 
+header_pages:
+
 navbar-links:
   About Me: "ABOUT.md"
   Resources:
