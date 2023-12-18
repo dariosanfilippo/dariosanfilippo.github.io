@@ -23,11 +23,11 @@ title: Dario Sanfilippo
 
 theme: jekyll-theme-minimal
 
-plugins:
-  - jekyll-relative-links
-relative_links:
-  enabled: true
-  collections: true
-include:
-  - README.md
-  - ABOUT.md
+  #plugins:
+  #  - jekyll-relative-links
+  #relative_links:
+  #  enabled: true
+  #  collections: true
+  #include:
+  #  - README.md
+  #  - ABOUT.md
