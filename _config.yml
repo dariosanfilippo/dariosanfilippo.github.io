@@ -18,7 +18,7 @@ kramdown:
     #    - Learn markdown: "https:dariosanfilippo.com/"
     #  Author's home: "https://dariosanfilippo.com"
 
-    #theme: jekyll-theme-minimal
+theme: jekyll-theme-minimal
 
   #plugins:
   #  - jekyll-relative-links
@@ -29,9 +29,9 @@ kramdown:
   #  - README.md
   #  - ABOUT.md
 
-header_pages:
-  - index.html
-    #- archives.html
-    #- categories.html
-    #- tags.html
-  - about.md
+    #header_pages:
+    #  - index.html
+    #    #- archives.html
+    #    #- categories.html
+    #    #- tags.html
+    #  - about.md
