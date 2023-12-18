@@ -28,3 +28,10 @@ theme: jekyll-theme-minimal
   #include:
   #  - README.md
   #  - ABOUT.md
+
+header_pages:
+  - index.html
+    #- archives.html
+    #- categories.html
+    #- tags.html
+    #- about.md
