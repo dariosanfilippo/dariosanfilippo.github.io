@@ -11,15 +11,12 @@ kramdown:
 
 title: Dario Sanfilippo
 
-  #header_pages:
-  #  About: "about"
-  #
-  #navbar-links:
-  #  About Me: "ABOUT.md"
-  #  Resources:
-  #    - Beautiful Jekyll: "https://dariosanfilippo.com"
-  #    - Learn markdown: "https:dariosanfilippo.com/"
-  #  Author's home: "https://dariosanfilippo.com"
+navbar-links:
+  About Me: "about"
+  Resources:
+    - Beautiful Jekyll: "https://dariosanfilippo.com"
+    - Learn markdown: "https:dariosanfilippo.com/"
+  Author's home: "https://dariosanfilippo.com"
 
 theme: jekyll-theme-minimal
 
