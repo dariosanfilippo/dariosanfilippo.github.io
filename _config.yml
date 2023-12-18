@@ -9,14 +9,14 @@ kramdown:
   math_engine: mathjax
   syntax_highlighter: rouge
 
-title: Dario Sanfilippo
-
-navbar-links:
-  About Me: "about"
-  Resources:
-    - Beautiful Jekyll: "https://dariosanfilippo.com"
-    - Learn markdown: "https:dariosanfilippo.com/"
-  Author's home: "https://dariosanfilippo.com"
+    #title: Dario Sanfilippo
+    #
+    #navbar-links:
+    #  About Me: "about"
+    #  Resources:
+    #    - Beautiful Jekyll: "https://dariosanfilippo.com"
+    #    - Learn markdown: "https:dariosanfilippo.com/"
+    #  Author's home: "https://dariosanfilippo.com"
 
 theme: jekyll-theme-minimal
 
