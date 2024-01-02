@@ -24,9 +24,10 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Dario Sanfilippo 
+title: 
 email: sanfilippo.dario@gmail.com
   #author:
+url: www.dariosanfilippo.com
 
 description: > # the ">" symbol means to ignore newlines until "footer_text:"
     A simple website for an algorithmic music researcher.
