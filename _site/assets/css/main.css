@@ -239,7 +239,7 @@ html[data-scroll-status=top] header.site-header-transparent.site-header .site-br
 }
 @media screen and (max-width: 800px) {
   html[data-scroll-status=top] header.site-header-transparent.site-header .page-link {
-    color: #cacaca;
+    color: black;
   }
   html[data-scroll-status=top] header.site-header-transparent.site-header .menu-icon > svg {
     fill: #fdfdfd;
@@ -263,7 +263,7 @@ html[data-scroll-status=down] .framework .sidebar {
  * Site header
  */
 .site-header {
-  background-color: #353535;
+  background-color: #ffffff;
   height: 63.84px;
   width: 100%;
   transition: height 0.2s, text-shadow 0.2s, top 0.2s;
@@ -308,7 +308,7 @@ html[data-scroll-status=down] .framework .sidebar {
   transition: 0.1s filter color;
 }
 .site-brand .site-brand-inner, .site-brand .site-brand-inner:visited {
-  color: #cacaca;
+  color: black;
 }
 .site-brand .site-brand-inner .site-favicon {
   display: inline-block;
@@ -331,7 +331,7 @@ html[data-scroll-status=down] .framework .sidebar {
 }
 .site-nav .page-link {
   line-height: 1.6;
-  color: #cacaca;
+  color: black;
   transition: 0.1s ease-in-out;
 }
 .site-nav .page-link:not(:last-child) {
@@ -357,7 +357,7 @@ html[data-scroll-status=down] .framework .sidebar {
     text-align: center;
   }
   .site-nav .menu-icon > svg {
-    fill: rgba(202, 202, 202, 0.8);
+    fill: rgba(0, 0, 0, 0.8);
     transition: 0.1s fill;
   }
   .site-nav input ~ .trigger {
@@ -368,12 +368,12 @@ html[data-scroll-status=down] .framework .sidebar {
   }
   .site-nav input:checked ~ .trigger {
     display: block;
-    background: #353535;
+    background: #ffffff;
   }
   .site-nav .page-link {
     display: block;
     padding: 5px 10px;
-    color: rgba(202, 202, 202, 0.8);
+    color: rgba(0, 0, 0, 0.8);
     margin: 0 25px;
   }
 }
@@ -383,8 +383,8 @@ html[data-scroll-status=down] .framework .sidebar {
  */
 .site-footer {
   font-size: 14px;
-  color: white;
-  background-color: #282828;
+  color: #404040;
+  background-color: #f2f2f2;
   text-align: left;
   transition: background-color 0.2s;
 }
@@ -1186,7 +1186,7 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
   transition: background 0.2s;
 }
 .common-list li a:hover {
-  background-color: #c6c6c6;
+  background-color: #eeeeee;
 }
 .common-list li span {
   font-size: 11.2px;
@@ -1292,7 +1292,7 @@ body {
 
 /* OVERRIDE GOOGLE TRANSLATE WIDGET CSS END */
 .ct-language-selected, .ct-language-dropdown li:hover {
-  background-color: #282828 !important;
+  background-color: #f2f2f2 !important;
 }
 
 .ct-language-dropdown {
@@ -1301,7 +1301,7 @@ body {
   position: absolute;
   top: 110%;
   right: -10px;
-  background-color: #424242;
+  background-color: white;
   -webkit-transition: all 0.25s ease-in-out;
   transition: all 0.25s ease-in-out;
   width: 100px;
@@ -1325,7 +1325,7 @@ body {
 }
 .ct-language-dropdown li a {
   display: block;
-  color: #cacaca;
+  color: black;
 }
 .ct-language-dropdown li a img {
   width: 24px;

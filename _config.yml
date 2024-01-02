@@ -24,7 +24,7 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Dario Sanfilippo
+title: 
 email: sanfilippo.dario@gmail.com
   #author:
 
@@ -54,6 +54,15 @@ last_updated: true # set to true if you want to display last updated in the foot
 # refer to https://shopify.github.io/liquid/filters/date/ if you want to customize this
 yat:
   date_format: "%d %b, %Y"
+
+github_username: dariosanfilippo # your GitHub user name
+twitter_username: dariosanfilippo # your Twitter handle
+linkedin_username: dariosanfilippo # your LinkedIn user name
+scholar_userid: eXSEPWEAAAAJ # your Google Scholar ID
+soundcloud_username: dario-sanfilippo
+bandcamp_username: dariosanfilippo
+instagram_username: dromedariosanfilippo
+orcid_id: 0000-0002-4036-2079 # your ORCID ID
 
 # If you want more debug log, you can set true
 # debug: false
@@ -102,12 +111,11 @@ yat:
 
 # You can choose a theme color
 # Default theme colors as below:
-coolblack: #090a0b
-spacegrey: #353535
-snowwhite: #ffffff
+#coolblack: #090a0b
+#spacegrey: #353535
+#snowwhite: #ffffff
 
-theme_color: spacegrey
-#theme_color: snowwhite
+theme_color: snowwhite
 #
 # Custom color as below:
 # theme_color: "#882250"
@@ -134,7 +142,7 @@ theme_color: spacegrey
 # it will be always kept on every visit (i.e. no matter
 # the browser is closed or not)
 #
-night_mode: "off"
+night_mode: "on"
 
 # Code badge setting
 # You can enable or disable the code badge and so on
@@ -148,16 +156,17 @@ night_mode: "off"
 # this and add the path to the pages in order as they should show up
 header_pages:
   - index.html
-    #- archives.html
-    #- categories.html
-    #- tags.html
-  - about.html
+  - about.md
+  - portfolio.md
+  - events.md
+  - publications.md
+  - cv.md
 
     #Page default value
 defaults:
   home:
-    heading: "Nope"
-    subheading: "Nopenope"
+    heading: "Dario Sanfilippo, PhD"
+    subheading: "Algorithmic Music – DSP – Audio Programming"
 #banner: "Your image url"
 
 # Banner default settings
