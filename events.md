@@ -5,10 +5,12 @@ title: Events
 
 ## Future events
 
-- (TBC) February 2024, Naples, Italy – duo with SEC_
-- (TBC) March 2024, **Edinburgh College of Art**, Edinburgh, UK – lecture and solo
-- (TBC) April 2024, Naples, Italy – duo with SEC_
-- November 2024, **NOW! Festival**, RWE Pavillon, Essen, Germany – duo with Agostino Di Scipio
+- 9th of September 2024, Vekks, Vienna – solo
+- 27th and 28th of September 2024, **Circuit Fantôme**, Vronihof, Vienna – tape pieces and solo live performance
+- 8th of November 2024, **NOW! Festival**, RWE Pavillon, Essen, Germany – duo with Agostino Di Scipio
+- 9th of November 2024, **Contemporary Contradictions Festival**, Riga, Latvia – solo live
+- 11th-14th of November 2024 – workshop on musical complex adaptive systems, Liepaja University, department of New Media Studies
+- 19th of December 2024, La Pelanda, Rome – live interventions for Di Scipio's concert
 
 ## Past events
 
