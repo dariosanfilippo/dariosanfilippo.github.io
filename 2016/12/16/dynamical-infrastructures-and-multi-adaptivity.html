@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Dynamical infrastructures and multi-adaptivity: higher degrees of variety and complexity in autonomous music feedback systems | Dario Sanfilippo</title>
+<meta name="generator" content="Jekyll v4.3.2">
+<meta property="og:title" content="Dynamical infrastructures and multi-adaptivity: higher degrees of variety and complexity in autonomous music feedback systems">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="On the 25th of November this year, I was invited to give a short talk and demonstration at the Digital Arts Symposium in Edinburgh about my research and latest developments of my PhD. I presented my idea of dynamical infrastructures and multi-adaptivity - probably one of the most important aspects of my research - which I will briefly introduce in this blog post. Generally speaking, the term “adaptive” refers to interacting agents that, individually or collectively, can change their state in response to variations in the environment or other interconnected agents. These changes can take place in the short-term, where the state of the agents is temporarily affected, or it can happen in the long-term with permanent or long-lasting variations in their states. [Mitchell 2016] In the field of complex adaptive systems, the term refers to a more specific behaviour. Namely, that of systems which are capable of changing their state in response to the environment or context to maintain a particular condition (to survive, for example) or to improve themselves (reaching a goal or target, for example). Here, I will use the term with a more general sense, referring to systems which are able to change their state based on the specific context that they experience at any given time. I prefer to use the term “context” rather than “environment” to include systems which are structurally coupled with the environment, as well as closed systems which are coupled with themselves without an external environment. In both cases, I am referring to recursive systems, that is, systems which provide the context that, circularly, affects their states. First of all, it is necessary to make a distinction between time-invariant and time-variant systems. In simple terms, a time-invariant system is a system which performs the same operation at all times. [Smith 2007] In the other case, we will have a system whose operation changes over time. Another important distinction, strictly related to the one above, is that between dynamical and adaptive systems. The output of a dynamical system changes over time, but the internal state of its agents may remain unaffected. On the other hand, an adaptive system implies that both its output and internal state change over time. As a practical example, we can consider an analogue mixer with a feedback configuration. Some specific set-up of the parameters may result in an output that, to some extent, changes over time, although the parameters of the mixer themselves will be static. On the contrary, a simple example of an analogue adaptive system could be a voltage-controlled filter with a feedback configuration: the output of the system (the context, in that case) will change the state of the filter, which, in turn, will affect the output. While some interesting results can be achieved with dynamical systems, adaptive systems are more likely to generate behaviours which exhibit higher long-term variety and complexity. Digital signal processing and audio programming provide very versatile tools for the implementation of time-variant adaptive systems in the domain of sound: ideally, given that stability is taken into account, all variables in a DSP unit can be driven by audio signals and can thus vary at audio rates. That way, the generated sounds and the states of the components can affect each other, making the system adaptive and time-variant. Practitioners like Di Scipio, myself and others make extensive use of this approach for the implementation of such systems. A typical procedure is that of performing several kinds of analysis operations on the input such as RMS and brightness estimation to obtain infrasonic signals. These signals, often based on their perceptual characteristics and their relationship with the domains of the variables in the processing units, are mapped to certain ranges and then used to control the state of the components in a large network. (See Di Scipio’s seminal text from 2003 for a detailed discussion on this method.) Using infrasonic signals to pilot these variables is highly desirable if not necessary, for high-rate, sudden changes in the DSP parameters would produce an output with a continuously large spectral band, and it would not be possible to perceive the state variations in the long-term. The sound analysis algorithms implemented, the specific connections between the control signals and the variables, the linear and nonlinear mapping strategies used, all these elements determine the infrastructure of a system. In a large network, these elements can already provide a high number of configurations and an even larger number of possible states that a system can reach. That, theoretically, could be considered as something that guarantees a good variety and complexity in the long-term behaviour of a system, albeit the practical case tends to be much different from the ideal scenario. In my experience, the realisation of an autonomous music system which exhibits convincing variety and complexity over a relatively long time span has been something difficult to achieve, even when implementing large and articulated networks. Variety and complexity are convincing when, in the long-term, there is a non-trivial interplay between order and disorder, redundancy and entropy, sound and silence, repetition and surprise, as well as homogeneity and heterogeneity in the sonic characteristics of the output. Ultimately, these all contribute to creating a behaviour which is expressive, musical and organic. And could an adaptive system with these features be considered alive and intelligent? This is an important question which I will discuss in my thesis and, perhaps, in another blog post too. Partly inspired by the interface that I have implemented to perform my LIES (sysmap) 1, I thought that the autonomy of a system could have been improved by making its infrastructure dynamical, that is, time-variant, hence resulting in different adaptive modalities. Based on what characterises the infrastructure of a system, I decided to build a prototype where the ranges in the mapping functions between control signals and DSP variables change over time with regard to the input sound of each node. The prototype itself is based on the network of my LIES (sysmap) 1 project, although I had to reduce the number of nodes in the network to make up the extra CPU load given by the generation of the new control signals. I called the prototype SD/OS (impulse/dynadapt), and it is a work for machine solo performance implementing an impulse-triggered, self-oscillating, closed system. The network has six nodes, each of them containing two cascaded units, carrying out the following processes: granulation, comb filtering, variable high-pass/low-pass filtering (basically raw IIR filters), pulse-width modulation, sampling and reverberation. We have a quasi-full network topology where the output of each node is routed to the input of all other nodes, and stability is obtained by using look-ahead limiters. It is beyond the scope of this post to discuss the technical details of the DSP units, so it is enough to say that the units have several structural counterbalancing mechanisms and that all varying variables are dependent on the control signals extracted from the input. Furthermore, as mentioned earlier, the ranges which determine how the variables change in relation to the control signals are themselves affected by the incoming sound. For this system, the method used to generate the control signals is different from the one described above. Rather than calculating the RMS or brightness, I am simply low-passing the input signal to slow it down with a cutoff as low as ~0.1Hz. I am then normalising it to roughly keep it in the [-1;1] range, and finally using it to pilot the frequency of a phasor, an oscillator which linearly cycles through values in the [0;1] range. Moreover, the low-passed signal is raised to some relatively large power to force it around 0 and limit the amount of variation. This way, instead of having one and only one value being generated with a particular input, the output of this algorithm will also depend on time, namely on how long a certain input is kept. Of course, this introduces some degree of opacity in the way the system functions. One reason is what I just described, the fact that both input and time will affect the output; the other is that the operation of low-passing simply averages a signal, which does not exactly have a perceptual correlate such as brightness or loudness. This algorithm, indeed, could be considered as a black box, but the system is still entirely deterministic and dependent on the context. In fact, triggering the system with the same initial conditions each time would produce the same stream of samples, while slightly different inputs would result in entirely new formal developments. Other implementations which I am planning to explore will make the infrastructures dynamical by reconfiguring the connections among variables and control signals when using perceptually-related analysis algorithms, or by interpolating among different analysis algorithms while keeping the same connections. The idea of meta-control signal processing, too, will be explored, which involves control signals affecting the variables in algorithms generating other control signals, thus making them time-variant. In general, the time-variant systems approach could be pushed even further, and it could extend the idea of dynamical infrastructures to that of dynamical nodes and dynamical topologies. It means that each node will be morphing through several processing techniques (reverberation, granulation, filtering, and so forth), and that the way they are interconnected will be varying. In this situation, all characterising elements of a system will be changing over time, realising the system of systems paradigm even more profoundly. Currently, I am also working on a high-level audio analysis algorithm which provides a complexity estimation for extended sound events. It is for some aspects inspired by the recurrence quantification analysis technique and it processes and combines the output of four low-level analysis units: RMS, brightness, noisiness and transients amount. I will discuss this algorithm in the next blog post, and it will be integrated with the aforementioned autonomous systems to establish a perceptual correlation between control signals and time-variant agents. At the following link, it is possible to listen to an audio example of the SD/OS (impulse/dynadapt) prototype described in this post. https://soundcloud.com/dario-sanfilippo/sdos-dynadapt-iir-1">
+<meta property="og:description" content="On the 25th of November this year, I was invited to give a short talk and demonstration at the Digital Arts Symposium in Edinburgh about my research and latest developments of my PhD. I presented my idea of dynamical infrastructures and multi-adaptivity - probably one of the most important aspects of my research - which I will briefly introduce in this blog post. Generally speaking, the term “adaptive” refers to interacting agents that, individually or collectively, can change their state in response to variations in the environment or other interconnected agents. These changes can take place in the short-term, where the state of the agents is temporarily affected, or it can happen in the long-term with permanent or long-lasting variations in their states. [Mitchell 2016] In the field of complex adaptive systems, the term refers to a more specific behaviour. Namely, that of systems which are capable of changing their state in response to the environment or context to maintain a particular condition (to survive, for example) or to improve themselves (reaching a goal or target, for example). Here, I will use the term with a more general sense, referring to systems which are able to change their state based on the specific context that they experience at any given time. I prefer to use the term “context” rather than “environment” to include systems which are structurally coupled with the environment, as well as closed systems which are coupled with themselves without an external environment. In both cases, I am referring to recursive systems, that is, systems which provide the context that, circularly, affects their states. First of all, it is necessary to make a distinction between time-invariant and time-variant systems. In simple terms, a time-invariant system is a system which performs the same operation at all times. [Smith 2007] In the other case, we will have a system whose operation changes over time. Another important distinction, strictly related to the one above, is that between dynamical and adaptive systems. The output of a dynamical system changes over time, but the internal state of its agents may remain unaffected. On the other hand, an adaptive system implies that both its output and internal state change over time. As a practical example, we can consider an analogue mixer with a feedback configuration. Some specific set-up of the parameters may result in an output that, to some extent, changes over time, although the parameters of the mixer themselves will be static. On the contrary, a simple example of an analogue adaptive system could be a voltage-controlled filter with a feedback configuration: the output of the system (the context, in that case) will change the state of the filter, which, in turn, will affect the output. While some interesting results can be achieved with dynamical systems, adaptive systems are more likely to generate behaviours which exhibit higher long-term variety and complexity. Digital signal processing and audio programming provide very versatile tools for the implementation of time-variant adaptive systems in the domain of sound: ideally, given that stability is taken into account, all variables in a DSP unit can be driven by audio signals and can thus vary at audio rates. That way, the generated sounds and the states of the components can affect each other, making the system adaptive and time-variant. Practitioners like Di Scipio, myself and others make extensive use of this approach for the implementation of such systems. A typical procedure is that of performing several kinds of analysis operations on the input such as RMS and brightness estimation to obtain infrasonic signals. These signals, often based on their perceptual characteristics and their relationship with the domains of the variables in the processing units, are mapped to certain ranges and then used to control the state of the components in a large network. (See Di Scipio’s seminal text from 2003 for a detailed discussion on this method.) Using infrasonic signals to pilot these variables is highly desirable if not necessary, for high-rate, sudden changes in the DSP parameters would produce an output with a continuously large spectral band, and it would not be possible to perceive the state variations in the long-term. The sound analysis algorithms implemented, the specific connections between the control signals and the variables, the linear and nonlinear mapping strategies used, all these elements determine the infrastructure of a system. In a large network, these elements can already provide a high number of configurations and an even larger number of possible states that a system can reach. That, theoretically, could be considered as something that guarantees a good variety and complexity in the long-term behaviour of a system, albeit the practical case tends to be much different from the ideal scenario. In my experience, the realisation of an autonomous music system which exhibits convincing variety and complexity over a relatively long time span has been something difficult to achieve, even when implementing large and articulated networks. Variety and complexity are convincing when, in the long-term, there is a non-trivial interplay between order and disorder, redundancy and entropy, sound and silence, repetition and surprise, as well as homogeneity and heterogeneity in the sonic characteristics of the output. Ultimately, these all contribute to creating a behaviour which is expressive, musical and organic. And could an adaptive system with these features be considered alive and intelligent? This is an important question which I will discuss in my thesis and, perhaps, in another blog post too. Partly inspired by the interface that I have implemented to perform my LIES (sysmap) 1, I thought that the autonomy of a system could have been improved by making its infrastructure dynamical, that is, time-variant, hence resulting in different adaptive modalities. Based on what characterises the infrastructure of a system, I decided to build a prototype where the ranges in the mapping functions between control signals and DSP variables change over time with regard to the input sound of each node. The prototype itself is based on the network of my LIES (sysmap) 1 project, although I had to reduce the number of nodes in the network to make up the extra CPU load given by the generation of the new control signals. I called the prototype SD/OS (impulse/dynadapt), and it is a work for machine solo performance implementing an impulse-triggered, self-oscillating, closed system. The network has six nodes, each of them containing two cascaded units, carrying out the following processes: granulation, comb filtering, variable high-pass/low-pass filtering (basically raw IIR filters), pulse-width modulation, sampling and reverberation. We have a quasi-full network topology where the output of each node is routed to the input of all other nodes, and stability is obtained by using look-ahead limiters. It is beyond the scope of this post to discuss the technical details of the DSP units, so it is enough to say that the units have several structural counterbalancing mechanisms and that all varying variables are dependent on the control signals extracted from the input. Furthermore, as mentioned earlier, the ranges which determine how the variables change in relation to the control signals are themselves affected by the incoming sound. For this system, the method used to generate the control signals is different from the one described above. Rather than calculating the RMS or brightness, I am simply low-passing the input signal to slow it down with a cutoff as low as ~0.1Hz. I am then normalising it to roughly keep it in the [-1;1] range, and finally using it to pilot the frequency of a phasor, an oscillator which linearly cycles through values in the [0;1] range. Moreover, the low-passed signal is raised to some relatively large power to force it around 0 and limit the amount of variation. This way, instead of having one and only one value being generated with a particular input, the output of this algorithm will also depend on time, namely on how long a certain input is kept. Of course, this introduces some degree of opacity in the way the system functions. One reason is what I just described, the fact that both input and time will affect the output; the other is that the operation of low-passing simply averages a signal, which does not exactly have a perceptual correlate such as brightness or loudness. This algorithm, indeed, could be considered as a black box, but the system is still entirely deterministic and dependent on the context. In fact, triggering the system with the same initial conditions each time would produce the same stream of samples, while slightly different inputs would result in entirely new formal developments. Other implementations which I am planning to explore will make the infrastructures dynamical by reconfiguring the connections among variables and control signals when using perceptually-related analysis algorithms, or by interpolating among different analysis algorithms while keeping the same connections. The idea of meta-control signal processing, too, will be explored, which involves control signals affecting the variables in algorithms generating other control signals, thus making them time-variant. In general, the time-variant systems approach could be pushed even further, and it could extend the idea of dynamical infrastructures to that of dynamical nodes and dynamical topologies. It means that each node will be morphing through several processing techniques (reverberation, granulation, filtering, and so forth), and that the way they are interconnected will be varying. In this situation, all characterising elements of a system will be changing over time, realising the system of systems paradigm even more profoundly. Currently, I am also working on a high-level audio analysis algorithm which provides a complexity estimation for extended sound events. It is for some aspects inspired by the recurrence quantification analysis technique and it processes and combines the output of four low-level analysis units: RMS, brightness, noisiness and transients amount. I will discuss this algorithm in the next blog post, and it will be integrated with the aforementioned autonomous systems to establish a perceptual correlation between control signals and time-variant agents. At the following link, it is possible to listen to an audio example of the SD/OS (impulse/dynadapt) prototype described in this post. https://soundcloud.com/dario-sanfilippo/sdos-dynadapt-iir-1">
+<link rel="canonical" href="/2016/12/16/dynamical-infrastructures-and-multi-adaptivity.html">
+<meta property="og:url" content="/2016/12/16/dynamical-infrastructures-and-multi-adaptivity.html">
+<meta property="og:site_name" content="Dario Sanfilippo">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2016-12-16T23:05:32+00:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Dynamical infrastructures and multi-adaptivity: higher degrees of variety and complexity in autonomous music feedback systems">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2016-12-16T23:05:32+00:00","datePublished":"2016-12-16T23:05:32+00:00","description":"On the 25th of November this year, I was invited to give a short talk and demonstration at the Digital Arts Symposium in Edinburgh about my research and latest developments of my PhD. I presented my idea of dynamical infrastructures and multi-adaptivity - probably one of the most important aspects of my research - which I will briefly introduce in this blog post. Generally speaking, the term “adaptive” refers to interacting agents that, individually or collectively, can change their state in response to variations in the environment or other interconnected agents. These changes can take place in the short-term, where the state of the agents is temporarily affected, or it can happen in the long-term with permanent or long-lasting variations in their states. [Mitchell 2016] In the field of complex adaptive systems, the term refers to a more specific behaviour. Namely, that of systems which are capable of changing their state in response to the environment or context to maintain a particular condition (to survive, for example) or to improve themselves (reaching a goal or target, for example). Here, I will use the term with a more general sense, referring to systems which are able to change their state based on the specific context that they experience at any given time. I prefer to use the term “context” rather than “environment” to include systems which are structurally coupled with the environment, as well as closed systems which are coupled with themselves without an external environment. In both cases, I am referring to recursive systems, that is, systems which provide the context that, circularly, affects their states. First of all, it is necessary to make a distinction between time-invariant and time-variant systems. In simple terms, a time-invariant system is a system which performs the same operation at all times. [Smith 2007] In the other case, we will have a system whose operation changes over time. Another important distinction, strictly related to the one above, is that between dynamical and adaptive systems. The output of a dynamical system changes over time, but the internal state of its agents may remain unaffected. On the other hand, an adaptive system implies that both its output and internal state change over time. As a practical example, we can consider an analogue mixer with a feedback configuration. Some specific set-up of the parameters may result in an output that, to some extent, changes over time, although the parameters of the mixer themselves will be static. On the contrary, a simple example of an analogue adaptive system could be a voltage-controlled filter with a feedback configuration: the output of the system (the context, in that case) will change the state of the filter, which, in turn, will affect the output. While some interesting results can be achieved with dynamical systems, adaptive systems are more likely to generate behaviours which exhibit higher long-term variety and complexity. Digital signal processing and audio programming provide very versatile tools for the implementation of time-variant adaptive systems in the domain of sound: ideally, given that stability is taken into account, all variables in a DSP unit can be driven by audio signals and can thus vary at audio rates. That way, the generated sounds and the states of the components can affect each other, making the system adaptive and time-variant. Practitioners like Di Scipio, myself and others make extensive use of this approach for the implementation of such systems. A typical procedure is that of performing several kinds of analysis operations on the input such as RMS and brightness estimation to obtain infrasonic signals. These signals, often based on their perceptual characteristics and their relationship with the domains of the variables in the processing units, are mapped to certain ranges and then used to control the state of the components in a large network. (See Di Scipio’s seminal text from 2003 for a detailed discussion on this method.) Using infrasonic signals to pilot these variables is highly desirable if not necessary, for high-rate, sudden changes in the DSP parameters would produce an output with a continuously large spectral band, and it would not be possible to perceive the state variations in the long-term. The sound analysis algorithms implemented, the specific connections between the control signals and the variables, the linear and nonlinear mapping strategies used, all these elements determine the infrastructure of a system. In a large network, these elements can already provide a high number of configurations and an even larger number of possible states that a system can reach. That, theoretically, could be considered as something that guarantees a good variety and complexity in the long-term behaviour of a system, albeit the practical case tends to be much different from the ideal scenario. In my experience, the realisation of an autonomous music system which exhibits convincing variety and complexity over a relatively long time span has been something difficult to achieve, even when implementing large and articulated networks. Variety and complexity are convincing when, in the long-term, there is a non-trivial interplay between order and disorder, redundancy and entropy, sound and silence, repetition and surprise, as well as homogeneity and heterogeneity in the sonic characteristics of the output. Ultimately, these all contribute to creating a behaviour which is expressive, musical and organic. And could an adaptive system with these features be considered alive and intelligent? This is an important question which I will discuss in my thesis and, perhaps, in another blog post too. Partly inspired by the interface that I have implemented to perform my LIES (sysmap) 1, I thought that the autonomy of a system could have been improved by making its infrastructure dynamical, that is, time-variant, hence resulting in different adaptive modalities. Based on what characterises the infrastructure of a system, I decided to build a prototype where the ranges in the mapping functions between control signals and DSP variables change over time with regard to the input sound of each node. The prototype itself is based on the network of my LIES (sysmap) 1 project, although I had to reduce the number of nodes in the network to make up the extra CPU load given by the generation of the new control signals. I called the prototype SD/OS (impulse/dynadapt), and it is a work for machine solo performance implementing an impulse-triggered, self-oscillating, closed system. The network has six nodes, each of them containing two cascaded units, carrying out the following processes: granulation, comb filtering, variable high-pass/low-pass filtering (basically raw IIR filters), pulse-width modulation, sampling and reverberation. We have a quasi-full network topology where the output of each node is routed to the input of all other nodes, and stability is obtained by using look-ahead limiters. It is beyond the scope of this post to discuss the technical details of the DSP units, so it is enough to say that the units have several structural counterbalancing mechanisms and that all varying variables are dependent on the control signals extracted from the input. Furthermore, as mentioned earlier, the ranges which determine how the variables change in relation to the control signals are themselves affected by the incoming sound. For this system, the method used to generate the control signals is different from the one described above. Rather than calculating the RMS or brightness, I am simply low-passing the input signal to slow it down with a cutoff as low as ~0.1Hz. I am then normalising it to roughly keep it in the [-1;1] range, and finally using it to pilot the frequency of a phasor, an oscillator which linearly cycles through values in the [0;1] range. Moreover, the low-passed signal is raised to some relatively large power to force it around 0 and limit the amount of variation. This way, instead of having one and only one value being generated with a particular input, the output of this algorithm will also depend on time, namely on how long a certain input is kept. Of course, this introduces some degree of opacity in the way the system functions. One reason is what I just described, the fact that both input and time will affect the output; the other is that the operation of low-passing simply averages a signal, which does not exactly have a perceptual correlate such as brightness or loudness. This algorithm, indeed, could be considered as a black box, but the system is still entirely deterministic and dependent on the context. In fact, triggering the system with the same initial conditions each time would produce the same stream of samples, while slightly different inputs would result in entirely new formal developments. Other implementations which I am planning to explore will make the infrastructures dynamical by reconfiguring the connections among variables and control signals when using perceptually-related analysis algorithms, or by interpolating among different analysis algorithms while keeping the same connections. The idea of meta-control signal processing, too, will be explored, which involves control signals affecting the variables in algorithms generating other control signals, thus making them time-variant. In general, the time-variant systems approach could be pushed even further, and it could extend the idea of dynamical infrastructures to that of dynamical nodes and dynamical topologies. It means that each node will be morphing through several processing techniques (reverberation, granulation, filtering, and so forth), and that the way they are interconnected will be varying. In this situation, all characterising elements of a system will be changing over time, realising the system of systems paradigm even more profoundly. Currently, I am also working on a high-level audio analysis algorithm which provides a complexity estimation for extended sound events. It is for some aspects inspired by the recurrence quantification analysis technique and it processes and combines the output of four low-level analysis units: RMS, brightness, noisiness and transients amount. I will discuss this algorithm in the next blog post, and it will be integrated with the aforementioned autonomous systems to establish a perceptual correlation between control signals and time-variant agents. At the following link, it is possible to listen to an audio example of the SD/OS (impulse/dynadapt) prototype described in this post. https://soundcloud.com/dario-sanfilippo/sdos-dynadapt-iir-1","headline":"Dynamical infrastructures and multi-adaptivity: higher degrees of variety and complexity in autonomous music feedback systems","mainEntityOfPage":{"@type":"WebPage","@id":"/2016/12/16/dynamical-infrastructures-and-multi-adaptivity.html"},"url":"/2016/12/16/dynamical-infrastructures-and-multi-adaptivity.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="shortcut icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Dario Sanfilippo">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/">
+  <img class="site-favicon" title="Dario Sanfilippo" src="" onerror="this.style.display='none'">
+  Dario Sanfilippo
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/">HOME</a><a class="page-link" href="/about.html">ABOUT</a><a class="page-link" href="/portfolio.html">PORTFOLIO</a><a class="page-link" href="/events.html">EVENTS</a><a class="page-link" href="/publications.html">PUBLICATIONS</a><a class="page-link" href="/cv.html">CV</a>
+
+
+
+
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('off' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    }
+  };
+</script>
+
+
+<p>On the 25th of November this year, I was invited to give a short talk and demonstration at the Digital Arts Symposium in Edinburgh about my research and latest developments of my PhD. I presented my idea of <i>dynamical infrastructures</i> and <i>multi-adaptivity</i> - probably one of the most important aspects of my research - which I will briefly introduce in this blog post.</p>
+<p>Generally speaking, the term “adaptive” refers to interacting agents that, individually or collectively, can change their state in response to variations in the environment or other interconnected agents. These changes can take place in the short-term, where the state of the agents is temporarily affected, or it can happen in the long-term with permanent or long-lasting variations in their states. [Mitchell 2016] In the field of complex adaptive systems, the term refers to a more specific behaviour. Namely, that of systems which are capable of changing their state in response to the environment or context to maintain a particular condition (to survive, for example) or to improve themselves (reaching a goal or target, for example).</p>
+<p>Here, I will use the term with a more general sense, referring to systems which are able to change their state based on the specific <i>context</i> that they <i>experience</i> at any given time. I prefer to use the term “context” rather than “environment” to include systems which are structurally coupled with the environment, as well as closed systems which are coupled with themselves without an external environment. In both cases, I am referring to recursive systems, that is, systems which provide the context that, circularly, affects their states.</p>
+<p>First of all, it is necessary to make a distinction between time-invariant and time-variant systems. In simple terms, a time-invariant system is a system which performs the same operation <i>at all times</i>. [Smith 2007] In the other case, we will have a system whose operation changes over time. Another important distinction, strictly related to the one above, is that between dynamical and adaptive systems. The output of a dynamical system changes over time, but the internal state of its agents may remain unaffected. On the other hand, an adaptive system implies that both its output and internal state change over time. As a practical example, we can consider an analogue mixer with a feedback configuration. Some specific set-up of the parameters may result in an output that, to some extent, changes over time, although the parameters of the mixer themselves will be static. On the contrary, a simple example of an analogue adaptive system could be a voltage-controlled filter with a feedback configuration: the output of the system (the context, in that case) will change the state of the filter, which, in turn, will affect the output.</p>
+<p>While some interesting results can be achieved with dynamical systems, adaptive systems are more likely to generate behaviours which exhibit higher long-term variety and complexity. Digital signal processing and audio programming provide very versatile tools for the implementation of time-variant adaptive systems in the domain of sound: ideally, given that stability is taken into account, all variables in a DSP unit can be driven by audio signals and can thus vary at audio rates. That way, the generated sounds and the states of the components can affect each other, making the system adaptive and time-variant. Practitioners like Di Scipio, myself and others make extensive use of this approach for the implementation of such systems. A typical procedure is that of performing several kinds of analysis operations on the input such as RMS and brightness estimation to obtain infrasonic signals. These signals, often based on their perceptual characteristics and their relationship with the domains of the variables in the processing units, are mapped to certain ranges and then used to control the state of the components in a large network. (See Di Scipio’s seminal text from 2003 for a detailed discussion on this method.) Using infrasonic signals to pilot these variables is highly desirable if not necessary, for high-rate, sudden changes in the DSP parameters would produce an output with a continuously large spectral band, and it would not be possible to perceive the state variations in the long-term.</p>
+<p>The sound analysis algorithms implemented, the specific connections between the control signals and the variables, the linear and nonlinear mapping strategies used, all these elements determine the <i>infrastructure</i> of a system. In a large network, these elements can already provide a high number of configurations and an even larger number of possible states that a system can reach. That, theoretically, could be considered as something that guarantees a good variety and complexity in the long-term behaviour of a system, albeit the practical case tends to be much different from the ideal scenario. In my experience, the realisation of an autonomous music system which exhibits convincing variety and complexity over a relatively long time span has been something difficult to achieve, even when implementing large and articulated networks. Variety and complexity are convincing when, in the long-term, there is a non-trivial interplay between order and disorder, redundancy and entropy, sound and silence, repetition and surprise, as well as homogeneity and heterogeneity in the sonic characteristics of the output. Ultimately, these all contribute to creating a behaviour which is expressive, musical and organic. And could an adaptive system with these features be considered alive and intelligent? This is an important question which I will discuss in my thesis and, perhaps, in another blog post too.</p>
+<p>Partly inspired by the interface that I have implemented to perform my <i>LIES (sysmap) 1</i>, I thought that the autonomy of a system could have been improved by making its infrastructure dynamical, that is, time-variant, hence resulting in different adaptive modalities. Based on what characterises the infrastructure of a system, I decided to build a prototype where the ranges in the mapping functions between control signals and DSP variables change over time with regard to the input sound of each node. The prototype itself is based on the network of my <i>LIES (sysmap) 1</i> project, although I had to reduce the number of nodes in the network to make up the extra CPU load given by the generation of the new control signals. I called the prototype <i>SD/OS (impulse/dynadapt)</i>, and it is a work for machine solo performance implementing an impulse-triggered, self-oscillating, closed system.</p>
+<p>The network has six nodes, each of them containing two cascaded units, carrying out the following processes: granulation, comb filtering, variable high-pass/low-pass filtering (basically raw IIR filters), pulse-width modulation, sampling and reverberation. We have a quasi-full network topology where the output of each node is routed to the input of all other nodes, and stability is obtained by using look-ahead limiters. It is beyond the scope of this post to discuss the technical details of the DSP units, so it is enough to say that the units have several structural counterbalancing mechanisms and that all varying variables are dependent on the control signals extracted from the input. Furthermore, as mentioned earlier, the ranges which determine how the variables change in relation to the control signals are themselves affected by the incoming sound.</p>
+<p>For this system, the method used to generate the control signals is different from the one described above. Rather than calculating the RMS or brightness, I am simply low-passing the input signal to slow it down with a cutoff as low as ~0.1Hz. I am then normalising it to roughly keep it in the [-1;1] range, and finally using it to pilot the frequency of a phasor, an oscillator which linearly cycles through values in the [0;1] range. Moreover, the low-passed signal is raised to some relatively large power to force it around 0 and limit the amount of variation. This way, instead of having one and only one value being generated with a particular input, the output of this algorithm will also depend on time, namely on how long a certain input is kept. Of course, this introduces some degree of <i>opacity</i> in the way the system functions. One reason is what I just described, the fact that both input and time will affect the output; the other is that the operation of low-passing simply averages a signal, which does not exactly have a perceptual correlate such as brightness or loudness. This algorithm, indeed, could be considered as a <i>black box,</i> but the system is still entirely deterministic and dependent on the context. In fact, triggering the system with the same initial conditions each time would produce the same stream of samples, while slightly different inputs would result in entirely new formal developments.</p>
+<p>Other implementations which I am planning to explore will make the infrastructures dynamical by reconfiguring the connections among variables and control signals when using perceptually-related analysis algorithms, or by interpolating among different analysis algorithms while keeping the same connections. The idea of <i>meta-control signal processing</i>, too, will be explored, which involves control signals affecting the variables in algorithms generating other control signals, thus making them time-variant. In general, the time-variant systems approach could be pushed even further, and it could extend the idea of dynamical infrastructures to that of <i>dynamical nodes</i> and <i>dynamical topologies</i>. It means that each node will be morphing through several processing techniques (reverberation, granulation, filtering, and so forth), and that the way they are interconnected will be varying. In this situation, all characterising elements of a system will be changing over time, realising the <i>system of systems</i> paradigm even more profoundly.</p>
+<p>Currently, I am also working on a high-level audio analysis algorithm which provides a complexity estimation for extended sound events. It is for some aspects inspired by the recurrence quantification analysis technique and it processes and combines the output of four low-level analysis units: RMS, brightness, noisiness and transients amount. I will discuss this algorithm in the next blog post, and it will be integrated with the aforementioned autonomous systems to establish a perceptual correlation between control signals and time-variant agents.</p>
+<p>At the following link, it is possible to listen to an audio example of the <i>SD/OS (impulse/dynadapt)</i> prototype described in this post. <a href="https://soundcloud.com/dario-sanfilippo/sdos-dynadapt-iir-1" target="_blank">https://soundcloud.com/dario-sanfilippo/sdos-dynadapt-iir-1</a></p>
+
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<!--<div></div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="http://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/feed.xml">via RSS</a></div>-->
+      <div>
+<a href="mailto:sanfilippo.dario@gmail.com">Email</a> | <a href="https://github.com/dariosanfilippo/" target="_blank" rel="“noreferrer" noopener>Github</a> | <a href="https://scholar.google.com/citations?user=eXSEPWEAAAAJ&hl=en" target="_blank" rel="“noreferrer" noopener>Google Scholar</a> | <a href="https://soundcloud.com/dario-sanfilippo" target="_blank" rel="“noreferrer" noopener>SoundCloud</a>
+</div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

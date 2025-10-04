@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>variable delay lines and granular processing in | Dario Sanfilippo</title>
+<meta name="generator" content="Jekyll v4.3.2">
+<meta property="og:title" content="variable delay lines and granular processing in">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="&lt;h2&gt;Variable delay lines and granular processing in Pure Data&lt;/h2&gt;&lt;p&gt;This is a short post about the implementation of granulators using variable delay lines. There are several examples of delay line granulators in Pure Data so I am not trying to reinvent the wheel, but since I have investigated them a bit I thought that some could still be interested in the mechanism behind this approach. After a quick introduction to variable delay lines, we will see why they are particularly useful for granulation. This design is just an extension of Miller Puckette’s pitch shifter which can be found in the G09 Pure Data help patch.&lt;/p&gt;&lt;p&gt;Variable delay lines allow for the delay time to be modulated at audio rates and also make it possible to have fractional delays by interpolating samples. In Pure Data, the interpolating algorithm is a four-point cubic function, the same used for its wavetable lookup object ([tabread4~]) used for the implementation of samplers.&lt;/p&gt;&lt;p&gt;Wavetables and variable delay lines share the same properties. (See Miller Puckette’s book for a discussion of the topic: http://msp.ucsd.edu/techniques/latest/book-html/.) The main difference is that the content of a delay line is constantly updated, which makes it ideal for a live situation, especially if you, like me, avoid mixing audio signal and message domain in Pure Data as much as possible.&lt;/p&gt;&lt;p&gt;You can think of a variable delay line as a system with, virtually, a rotating tape loop to which a fixed writing head and a moving reading head are attached. The input of the writing head is the signal which is being written on the tape; the input of the reading head is the delay after which that signal will be output. The length of the tape (D) is the maximum possible delay time and is the case where the reading head is just behind the writing head. On the other hand, if the reading head is immediately next to the writing head we will have a zero-delay output. All other positions, determined by the input signal of the reading head, are the possible delays between 0 and D.&lt;/p&gt;&lt;p&gt;Intuitively, if the reading head moves towards the opposite direction of the tape we will have an increase in speed. Conversely, if it moves towards the same direction of the tape we will have a decrease in speed. The first case is a pitch transposition up, the second case is a transposition down.&lt;/p&gt;&lt;p&gt;Generally speaking, if d[n] is the input of the reading head, setting the delay in samples, the pitch transposition factor t[n] for delay lines is given by the following formula:&lt;/p&gt;&lt;blockquote&gt;&lt;p&gt;t[n] = 1 - (d[n] - d[n - 1]).&lt;/p&gt;&lt;/blockquote&gt;&lt;p&gt;Using this formula, we can easily calculate the slope of a line – a [phasor~] object, in this case – which represents the delay variation necessary to perform the desired transposition, although this variation can only take place for a limited period given the finite length of the delay line.&lt;/p&gt;&lt;p&gt;In order to have a continuous transposition, two overlapping reading heads are commonly used. These heads are 180º out of phase and their cycles are smoothed out using windowing functions to avoid audible discontinuities. In fact, this is the reason why such a design can be used for granular processing: each cycle of a reading head is a portion of sound which is being read, and, as we will see, this portion can be of any length. &lt;/p&gt;&lt;p&gt;There are a number of windowing functions with different characteristics; here we are using the positive sine window to compensate for the statistical phase cancellation taking place when summing two signals together. (Check out one of the awesome posts by Katja Vetter to find out more: http://www.katjaas.nl/pitchshift/pitchshift.html.)&lt;/p&gt;&lt;p&gt;Now that it is possible to transpose a signal for an arbitrary amount of time, the remaining parts of the granulator are the grain rate – which, in this design, is linked to the grain duration – and the time transposition or time stretching.&lt;/p&gt;&lt;p&gt;Once the slope for a given pitch transposition has been calculated, keeping the same transposition for different grain rates is only a matter of scaling down the delay variation size to have a constant slope.&lt;/p&gt;&lt;p&gt;Time transposition, in this case, can be implemented by consistently offsetting the grains with regard to the movement of the tape (metaphorically speaking), and we can still use the transposition formula above to calculate the slope of the offset. For example, if the grains are offset at the same rate as the motion of the tape, the reading heads will always be in the same region of the buffer and we will have a ‘freeze’ effect (or zero-factor time transposition).&lt;/p&gt;&lt;p&gt;You can also note that this design is consistent with negative transposition factors of both time and pitch, and those will result, respectively, in exploring the buffer backwards and playing the grains in reverse.&lt;/p&gt;&lt;p&gt;You can save the text below into a plain text file with the .pd extention to try the patch. The object takes an argument which is the delay line length in milliseconds.&lt;/p&gt;&lt;p&gt;#N canvas 104 0 956 778 10;#X obj 116 200 inlet~;#X obj 115 372 samphold~;#X obj 249 438 *~;#X obj 115 585 vd~ $0-grain;#X obj 670 144 phasor~;#X obj 731 176 +~ 0.5;#X obj 731 198 wrap~;#X obj 731 227 s~ $0-ph2;#X obj 670 227 s~ $0-ph1;#X obj 166 348 r~ $0-ph1;#X obj 300 346 r~ $0-ph1;#X obj 227 486 r~ $0-ph1;#X obj 115 635 *~;#X obj 435 372 samphold~;#X obj 649 438 *~;#X obj 435 585 vd~ $0-grain;#X obj 435 695 *~;#X obj 486 348 r~ $0-ph2;#X obj 700 346 r~ $0-ph2;#X obj 567 557 r~ $0-ph2;#X obj 291 732 outlet~;#X obj 249 373 samphold~;#X obj 649 373 samphold~;#X obj 510 171 /~;#X obj 525 100 inlet~;#X obj 510 198 *~ 1000;#X obj 670 70 inlet~;#X obj 359 100 inlet~;#X obj 329 227 s~ $0-position;#X obj 115 318 r~ $0-position;#X obj 329 152 *~;#X obj 329 177 phasor~;#X text 713 70 grain rate;#X text 568 100 pitch factor;#X obj 329 201 *~ $1;#X obj 116 227 delwrite~ $0-grain $1;#X obj 115 522 wrap~;#X obj 435 522 wrap~;#X obj 264 26 sig~ 1;#X obj 264 108 /~;#X obj 279 54 sig~ $1;#X obj 279 76 *~ 0.001;#X obj 344 76 sig~ 1;#X obj 344 129 -~;#X obj 510 76 sig~ 1;#X obj 510 138 -~;#X obj 670 107 max~ 0;#X obj 510 227 s~ $0-size;#X obj 249 318 r~ $0-size;#X obj 649 318 r~ $0-size;#X obj 435 318 r~ $0-position;#X obj 664 409 r~ $0-ph2;#X obj 264 409 r~ $0-ph1;#X obj 115 493 /~ $1;#X obj 115 553 *~ $1;#X obj 435 493 /~ $1;#X obj 435 553 *~ $1;#X text 528 318 buffer position;#X text 718 318 delay variation size;#X text 478 522 wrap around when margins are exceeded;#X text 401 100 time factor;#X obj 227 585 cos~;#X obj 227 518 -~ 0.5;#X obj 227 552 *~ 0.5;#X obj 567 655 cos~;#X obj 567 588 -~ 0.5;#X obj 567 622 *~ 0.5;#X connect 0 0 35 0;#X connect 1 0 53 0;#X connect 2 0 53 0;#X connect 3 0 12 0;#X connect 4 0 8 0;#X connect 4 0 5 0;#X connect 5 0 6 0;#X connect 6 0 7 0;#X connect 9 0 1 1;#X connect 10 0 21 1;#X connect 11 0 62 0;#X connect 12 0 20 0;#X connect 13 0 55 0;#X connect 14 0 55 0;#X connect 15 0 16 0;#X connect 16 0 20 0;#X connect 17 0 13 1;#X connect 18 0 22 1;#X connect 19 0 65 0;#X connect 21 0 2 0;#X connect 22 0 14 0;#X connect 23 0 25 0;#X connect 24 0 45 1;#X connect 25 0 47 0;#X connect 26 0 46 0;#X connect 27 0 43 1;#X connect 29 0 1 0;#X connect 30 0 31 0;#X connect 31 0 34 0;#X connect 34 0 28 0;#X connect 36 0 54 0;#X connect 37 0 56 0;#X connect 38 0 39 0;#X connect 39 0 30 0;#X connect 40 0 41 0;#X connect 41 0 39 1;#X connect 42 0 43 0;#X connect 43 0 30 1;#X connect 44 0 45 0;#X connect 45 0 23 0;#X connect 46 0 4 0;#X connect 46 0 23 1;#X connect 48 0 21 0;#X connect 49 0 22 0;#X connect 50 0 13 0;#X connect 51 0 14 1;#X connect 52 0 2 1;#X connect 53 0 36 0;#X connect 54 0 3 0;#X connect 55 0 37 0;#X connect 56 0 15 0;#X connect 61 0 12 1;#X connect 62 0 63 0;#X connect 63 0 61 0;#X connect 64 0 16 1;#X connect 65 0 66 0;#X connect 66 0 64 0;&lt;/p&gt;">
+<meta property="og:description" content="&lt;h2&gt;Variable delay lines and granular processing in Pure Data&lt;/h2&gt;&lt;p&gt;This is a short post about the implementation of granulators using variable delay lines. There are several examples of delay line granulators in Pure Data so I am not trying to reinvent the wheel, but since I have investigated them a bit I thought that some could still be interested in the mechanism behind this approach. After a quick introduction to variable delay lines, we will see why they are particularly useful for granulation. This design is just an extension of Miller Puckette’s pitch shifter which can be found in the G09 Pure Data help patch.&lt;/p&gt;&lt;p&gt;Variable delay lines allow for the delay time to be modulated at audio rates and also make it possible to have fractional delays by interpolating samples. In Pure Data, the interpolating algorithm is a four-point cubic function, the same used for its wavetable lookup object ([tabread4~]) used for the implementation of samplers.&lt;/p&gt;&lt;p&gt;Wavetables and variable delay lines share the same properties. (See Miller Puckette’s book for a discussion of the topic: http://msp.ucsd.edu/techniques/latest/book-html/.) The main difference is that the content of a delay line is constantly updated, which makes it ideal for a live situation, especially if you, like me, avoid mixing audio signal and message domain in Pure Data as much as possible.&lt;/p&gt;&lt;p&gt;You can think of a variable delay line as a system with, virtually, a rotating tape loop to which a fixed writing head and a moving reading head are attached. The input of the writing head is the signal which is being written on the tape; the input of the reading head is the delay after which that signal will be output. The length of the tape (D) is the maximum possible delay time and is the case where the reading head is just behind the writing head. On the other hand, if the reading head is immediately next to the writing head we will have a zero-delay output. All other positions, determined by the input signal of the reading head, are the possible delays between 0 and D.&lt;/p&gt;&lt;p&gt;Intuitively, if the reading head moves towards the opposite direction of the tape we will have an increase in speed. Conversely, if it moves towards the same direction of the tape we will have a decrease in speed. The first case is a pitch transposition up, the second case is a transposition down.&lt;/p&gt;&lt;p&gt;Generally speaking, if d[n] is the input of the reading head, setting the delay in samples, the pitch transposition factor t[n] for delay lines is given by the following formula:&lt;/p&gt;&lt;blockquote&gt;&lt;p&gt;t[n] = 1 - (d[n] - d[n - 1]).&lt;/p&gt;&lt;/blockquote&gt;&lt;p&gt;Using this formula, we can easily calculate the slope of a line – a [phasor~] object, in this case – which represents the delay variation necessary to perform the desired transposition, although this variation can only take place for a limited period given the finite length of the delay line.&lt;/p&gt;&lt;p&gt;In order to have a continuous transposition, two overlapping reading heads are commonly used. These heads are 180º out of phase and their cycles are smoothed out using windowing functions to avoid audible discontinuities. In fact, this is the reason why such a design can be used for granular processing: each cycle of a reading head is a portion of sound which is being read, and, as we will see, this portion can be of any length. &lt;/p&gt;&lt;p&gt;There are a number of windowing functions with different characteristics; here we are using the positive sine window to compensate for the statistical phase cancellation taking place when summing two signals together. (Check out one of the awesome posts by Katja Vetter to find out more: http://www.katjaas.nl/pitchshift/pitchshift.html.)&lt;/p&gt;&lt;p&gt;Now that it is possible to transpose a signal for an arbitrary amount of time, the remaining parts of the granulator are the grain rate – which, in this design, is linked to the grain duration – and the time transposition or time stretching.&lt;/p&gt;&lt;p&gt;Once the slope for a given pitch transposition has been calculated, keeping the same transposition for different grain rates is only a matter of scaling down the delay variation size to have a constant slope.&lt;/p&gt;&lt;p&gt;Time transposition, in this case, can be implemented by consistently offsetting the grains with regard to the movement of the tape (metaphorically speaking), and we can still use the transposition formula above to calculate the slope of the offset. For example, if the grains are offset at the same rate as the motion of the tape, the reading heads will always be in the same region of the buffer and we will have a ‘freeze’ effect (or zero-factor time transposition).&lt;/p&gt;&lt;p&gt;You can also note that this design is consistent with negative transposition factors of both time and pitch, and those will result, respectively, in exploring the buffer backwards and playing the grains in reverse.&lt;/p&gt;&lt;p&gt;You can save the text below into a plain text file with the .pd extention to try the patch. The object takes an argument which is the delay line length in milliseconds.&lt;/p&gt;&lt;p&gt;#N canvas 104 0 956 778 10;#X obj 116 200 inlet~;#X obj 115 372 samphold~;#X obj 249 438 *~;#X obj 115 585 vd~ $0-grain;#X obj 670 144 phasor~;#X obj 731 176 +~ 0.5;#X obj 731 198 wrap~;#X obj 731 227 s~ $0-ph2;#X obj 670 227 s~ $0-ph1;#X obj 166 348 r~ $0-ph1;#X obj 300 346 r~ $0-ph1;#X obj 227 486 r~ $0-ph1;#X obj 115 635 *~;#X obj 435 372 samphold~;#X obj 649 438 *~;#X obj 435 585 vd~ $0-grain;#X obj 435 695 *~;#X obj 486 348 r~ $0-ph2;#X obj 700 346 r~ $0-ph2;#X obj 567 557 r~ $0-ph2;#X obj 291 732 outlet~;#X obj 249 373 samphold~;#X obj 649 373 samphold~;#X obj 510 171 /~;#X obj 525 100 inlet~;#X obj 510 198 *~ 1000;#X obj 670 70 inlet~;#X obj 359 100 inlet~;#X obj 329 227 s~ $0-position;#X obj 115 318 r~ $0-position;#X obj 329 152 *~;#X obj 329 177 phasor~;#X text 713 70 grain rate;#X text 568 100 pitch factor;#X obj 329 201 *~ $1;#X obj 116 227 delwrite~ $0-grain $1;#X obj 115 522 wrap~;#X obj 435 522 wrap~;#X obj 264 26 sig~ 1;#X obj 264 108 /~;#X obj 279 54 sig~ $1;#X obj 279 76 *~ 0.001;#X obj 344 76 sig~ 1;#X obj 344 129 -~;#X obj 510 76 sig~ 1;#X obj 510 138 -~;#X obj 670 107 max~ 0;#X obj 510 227 s~ $0-size;#X obj 249 318 r~ $0-size;#X obj 649 318 r~ $0-size;#X obj 435 318 r~ $0-position;#X obj 664 409 r~ $0-ph2;#X obj 264 409 r~ $0-ph1;#X obj 115 493 /~ $1;#X obj 115 553 *~ $1;#X obj 435 493 /~ $1;#X obj 435 553 *~ $1;#X text 528 318 buffer position;#X text 718 318 delay variation size;#X text 478 522 wrap around when margins are exceeded;#X text 401 100 time factor;#X obj 227 585 cos~;#X obj 227 518 -~ 0.5;#X obj 227 552 *~ 0.5;#X obj 567 655 cos~;#X obj 567 588 -~ 0.5;#X obj 567 622 *~ 0.5;#X connect 0 0 35 0;#X connect 1 0 53 0;#X connect 2 0 53 0;#X connect 3 0 12 0;#X connect 4 0 8 0;#X connect 4 0 5 0;#X connect 5 0 6 0;#X connect 6 0 7 0;#X connect 9 0 1 1;#X connect 10 0 21 1;#X connect 11 0 62 0;#X connect 12 0 20 0;#X connect 13 0 55 0;#X connect 14 0 55 0;#X connect 15 0 16 0;#X connect 16 0 20 0;#X connect 17 0 13 1;#X connect 18 0 22 1;#X connect 19 0 65 0;#X connect 21 0 2 0;#X connect 22 0 14 0;#X connect 23 0 25 0;#X connect 24 0 45 1;#X connect 25 0 47 0;#X connect 26 0 46 0;#X connect 27 0 43 1;#X connect 29 0 1 0;#X connect 30 0 31 0;#X connect 31 0 34 0;#X connect 34 0 28 0;#X connect 36 0 54 0;#X connect 37 0 56 0;#X connect 38 0 39 0;#X connect 39 0 30 0;#X connect 40 0 41 0;#X connect 41 0 39 1;#X connect 42 0 43 0;#X connect 43 0 30 1;#X connect 44 0 45 0;#X connect 45 0 23 0;#X connect 46 0 4 0;#X connect 46 0 23 1;#X connect 48 0 21 0;#X connect 49 0 22 0;#X connect 50 0 13 0;#X connect 51 0 14 1;#X connect 52 0 2 1;#X connect 53 0 36 0;#X connect 54 0 3 0;#X connect 55 0 37 0;#X connect 56 0 15 0;#X connect 61 0 12 1;#X connect 62 0 63 0;#X connect 63 0 61 0;#X connect 64 0 16 1;#X connect 65 0 66 0;#X connect 66 0 64 0;&lt;/p&gt;">
+<link rel="canonical" href="/2017/06/17/variable-delay-lines-and-granular-processing-in.html">
+<meta property="og:url" content="/2017/06/17/variable-delay-lines-and-granular-processing-in.html">
+<meta property="og:site_name" content="Dario Sanfilippo">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2017-06-17T09:51:24+00:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="variable delay lines and granular processing in">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2017-06-17T09:51:24+00:00","datePublished":"2017-06-17T09:51:24+00:00","description":"&lt;h2&gt;Variable delay lines and granular processing in Pure Data&lt;/h2&gt;&lt;p&gt;This is a short post about the implementation of granulators using variable delay lines. There are several examples of delay line granulators in Pure Data so I am not trying to reinvent the wheel, but since I have investigated them a bit I thought that some could still be interested in the mechanism behind this approach. After a quick introduction to variable delay lines, we will see why they are particularly useful for granulation. This design is just an extension of Miller Puckette’s pitch shifter which can be found in the G09 Pure Data help patch.&lt;/p&gt;&lt;p&gt;Variable delay lines allow for the delay time to be modulated at audio rates and also make it possible to have fractional delays by interpolating samples. In Pure Data, the interpolating algorithm is a four-point cubic function, the same used for its wavetable lookup object ([tabread4~]) used for the implementation of samplers.&lt;/p&gt;&lt;p&gt;Wavetables and variable delay lines share the same properties. (See Miller Puckette’s book for a discussion of the topic: http://msp.ucsd.edu/techniques/latest/book-html/.) The main difference is that the content of a delay line is constantly updated, which makes it ideal for a live situation, especially if you, like me, avoid mixing audio signal and message domain in Pure Data as much as possible.&lt;/p&gt;&lt;p&gt;You can think of a variable delay line as a system with, virtually, a rotating tape loop to which a fixed writing head and a moving reading head are attached. The input of the writing head is the signal which is being written on the tape; the input of the reading head is the delay after which that signal will be output. The length of the tape (D) is the maximum possible delay time and is the case where the reading head is just behind the writing head. On the other hand, if the reading head is immediately next to the writing head we will have a zero-delay output. All other positions, determined by the input signal of the reading head, are the possible delays between 0 and D.&lt;/p&gt;&lt;p&gt;Intuitively, if the reading head moves towards the opposite direction of the tape we will have an increase in speed. Conversely, if it moves towards the same direction of the tape we will have a decrease in speed. The first case is a pitch transposition up, the second case is a transposition down.&lt;/p&gt;&lt;p&gt;Generally speaking, if d[n] is the input of the reading head, setting the delay in samples, the pitch transposition factor t[n] for delay lines is given by the following formula:&lt;/p&gt;&lt;blockquote&gt;&lt;p&gt;t[n] = 1 - (d[n] - d[n - 1]).&lt;/p&gt;&lt;/blockquote&gt;&lt;p&gt;Using this formula, we can easily calculate the slope of a line – a [phasor~] object, in this case – which represents the delay variation necessary to perform the desired transposition, although this variation can only take place for a limited period given the finite length of the delay line.&lt;/p&gt;&lt;p&gt;In order to have a continuous transposition, two overlapping reading heads are commonly used. These heads are 180º out of phase and their cycles are smoothed out using windowing functions to avoid audible discontinuities. In fact, this is the reason why such a design can be used for granular processing: each cycle of a reading head is a portion of sound which is being read, and, as we will see, this portion can be of any length. &lt;/p&gt;&lt;p&gt;There are a number of windowing functions with different characteristics; here we are using the positive sine window to compensate for the statistical phase cancellation taking place when summing two signals together. (Check out one of the awesome posts by Katja Vetter to find out more: http://www.katjaas.nl/pitchshift/pitchshift.html.)&lt;/p&gt;&lt;p&gt;Now that it is possible to transpose a signal for an arbitrary amount of time, the remaining parts of the granulator are the grain rate – which, in this design, is linked to the grain duration – and the time transposition or time stretching.&lt;/p&gt;&lt;p&gt;Once the slope for a given pitch transposition has been calculated, keeping the same transposition for different grain rates is only a matter of scaling down the delay variation size to have a constant slope.&lt;/p&gt;&lt;p&gt;Time transposition, in this case, can be implemented by consistently offsetting the grains with regard to the movement of the tape (metaphorically speaking), and we can still use the transposition formula above to calculate the slope of the offset. For example, if the grains are offset at the same rate as the motion of the tape, the reading heads will always be in the same region of the buffer and we will have a ‘freeze’ effect (or zero-factor time transposition).&lt;/p&gt;&lt;p&gt;You can also note that this design is consistent with negative transposition factors of both time and pitch, and those will result, respectively, in exploring the buffer backwards and playing the grains in reverse.&lt;/p&gt;&lt;p&gt;You can save the text below into a plain text file with the .pd extention to try the patch. The object takes an argument which is the delay line length in milliseconds.&lt;/p&gt;&lt;p&gt;#N canvas 104 0 956 778 10;#X obj 116 200 inlet~;#X obj 115 372 samphold~;#X obj 249 438 *~;#X obj 115 585 vd~ $0-grain;#X obj 670 144 phasor~;#X obj 731 176 +~ 0.5;#X obj 731 198 wrap~;#X obj 731 227 s~ $0-ph2;#X obj 670 227 s~ $0-ph1;#X obj 166 348 r~ $0-ph1;#X obj 300 346 r~ $0-ph1;#X obj 227 486 r~ $0-ph1;#X obj 115 635 *~;#X obj 435 372 samphold~;#X obj 649 438 *~;#X obj 435 585 vd~ $0-grain;#X obj 435 695 *~;#X obj 486 348 r~ $0-ph2;#X obj 700 346 r~ $0-ph2;#X obj 567 557 r~ $0-ph2;#X obj 291 732 outlet~;#X obj 249 373 samphold~;#X obj 649 373 samphold~;#X obj 510 171 /~;#X obj 525 100 inlet~;#X obj 510 198 *~ 1000;#X obj 670 70 inlet~;#X obj 359 100 inlet~;#X obj 329 227 s~ $0-position;#X obj 115 318 r~ $0-position;#X obj 329 152 *~;#X obj 329 177 phasor~;#X text 713 70 grain rate;#X text 568 100 pitch factor;#X obj 329 201 *~ $1;#X obj 116 227 delwrite~ $0-grain $1;#X obj 115 522 wrap~;#X obj 435 522 wrap~;#X obj 264 26 sig~ 1;#X obj 264 108 /~;#X obj 279 54 sig~ $1;#X obj 279 76 *~ 0.001;#X obj 344 76 sig~ 1;#X obj 344 129 -~;#X obj 510 76 sig~ 1;#X obj 510 138 -~;#X obj 670 107 max~ 0;#X obj 510 227 s~ $0-size;#X obj 249 318 r~ $0-size;#X obj 649 318 r~ $0-size;#X obj 435 318 r~ $0-position;#X obj 664 409 r~ $0-ph2;#X obj 264 409 r~ $0-ph1;#X obj 115 493 /~ $1;#X obj 115 553 *~ $1;#X obj 435 493 /~ $1;#X obj 435 553 *~ $1;#X text 528 318 buffer position;#X text 718 318 delay variation size;#X text 478 522 wrap around when margins are exceeded;#X text 401 100 time factor;#X obj 227 585 cos~;#X obj 227 518 -~ 0.5;#X obj 227 552 *~ 0.5;#X obj 567 655 cos~;#X obj 567 588 -~ 0.5;#X obj 567 622 *~ 0.5;#X connect 0 0 35 0;#X connect 1 0 53 0;#X connect 2 0 53 0;#X connect 3 0 12 0;#X connect 4 0 8 0;#X connect 4 0 5 0;#X connect 5 0 6 0;#X connect 6 0 7 0;#X connect 9 0 1 1;#X connect 10 0 21 1;#X connect 11 0 62 0;#X connect 12 0 20 0;#X connect 13 0 55 0;#X connect 14 0 55 0;#X connect 15 0 16 0;#X connect 16 0 20 0;#X connect 17 0 13 1;#X connect 18 0 22 1;#X connect 19 0 65 0;#X connect 21 0 2 0;#X connect 22 0 14 0;#X connect 23 0 25 0;#X connect 24 0 45 1;#X connect 25 0 47 0;#X connect 26 0 46 0;#X connect 27 0 43 1;#X connect 29 0 1 0;#X connect 30 0 31 0;#X connect 31 0 34 0;#X connect 34 0 28 0;#X connect 36 0 54 0;#X connect 37 0 56 0;#X connect 38 0 39 0;#X connect 39 0 30 0;#X connect 40 0 41 0;#X connect 41 0 39 1;#X connect 42 0 43 0;#X connect 43 0 30 1;#X connect 44 0 45 0;#X connect 45 0 23 0;#X connect 46 0 4 0;#X connect 46 0 23 1;#X connect 48 0 21 0;#X connect 49 0 22 0;#X connect 50 0 13 0;#X connect 51 0 14 1;#X connect 52 0 2 1;#X connect 53 0 36 0;#X connect 54 0 3 0;#X connect 55 0 37 0;#X connect 56 0 15 0;#X connect 61 0 12 1;#X connect 62 0 63 0;#X connect 63 0 61 0;#X connect 64 0 16 1;#X connect 65 0 66 0;#X connect 66 0 64 0;&lt;/p&gt;","headline":"variable delay lines and granular processing in","mainEntityOfPage":{"@type":"WebPage","@id":"/2017/06/17/variable-delay-lines-and-granular-processing-in.html"},"url":"/2017/06/17/variable-delay-lines-and-granular-processing-in.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="shortcut icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Dario Sanfilippo">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+<script>MathJax={"tex":{"inlineMath":[["$","$"],["\\(","\\)"]],"displayMath":[["$$","$$"],["\\[","\\]"]]},"svg":{"fontCache":"global"}}</script><script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/">
+  <img class="site-favicon" title="Dario Sanfilippo" src="" onerror="this.style.display='none'">
+  Dario Sanfilippo
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/">HOME</a><a class="page-link" href="/about.html">ABOUT</a><a class="page-link" href="/portfolio.html">PORTFOLIO</a><a class="page-link" href="/events.html">EVENTS</a><a class="page-link" href="/publications.html">PUBLICATIONS</a><a class="page-link" href="/cv.html">CV</a>
+
+
+
+
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('off' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    }
+  };
+</script>
+
+
+<img src="https://64.media.tumblr.com/1e3704aa0fac8b1cd7b59d71504e8da2/tumblr_orordoH0Ie1r0ulxko1_r1_1280.jpg"><br><h2>Variable delay lines and granular processing in Pure Data</h2>
+<p>This is a short post about the implementation of granulators using variable delay lines. There are several examples of delay line granulators in Pure Data so I am not trying to reinvent the wheel, but since I have investigated them a bit I thought that some could still be interested in the mechanism behind this approach. After a quick introduction to variable delay lines, we will see why they are particularly useful for granulation. This design is just an extension of Miller Puckette’s pitch shifter which can be found in the G09 Pure Data help patch.</p>
+<p>Variable delay lines allow for the delay time to be modulated at audio rates and also make it possible to have fractional delays by interpolating samples. In Pure Data, the interpolating algorithm is a four-point cubic function, the same used for its wavetable lookup object ([tabread4~]) used for the implementation of samplers.</p>
+<p>Wavetables and variable delay lines share the same properties. (See Miller Puckette’s book for a discussion of the topic: <a href="http://msp.ucsd.edu/techniques/latest/book-html/" target="_blank">http://msp.ucsd.edu/techniques/latest/book-html/</a>.) The main difference is that the content of a delay line is constantly updated, which makes it ideal for a live situation, especially if you, like me, avoid mixing audio signal and message domain in Pure Data as much as possible.</p>
+<p>You can think of a variable delay line as a system with, virtually, a rotating tape loop to which a fixed writing head and a moving reading head are attached. The input of the writing head is the signal which is being written on the tape; the input of the reading head is the delay after which that signal will be output. The length of the tape (<i>D</i>) is the maximum possible delay time and is the case where the reading head is just behind the writing head. On the other hand, if the reading head is immediately next to the writing head we will have a zero-delay output. All other positions, determined by the input signal of the reading head, are the possible delays between 0 and <i>D.</i></p>
+<p>Intuitively, if the reading head moves towards the opposite direction of the tape we will have an increase in speed. Conversely, if it moves towards the same direction of the tape we will have a decrease in speed. The first case is a <i>pitch transposition</i> up, the second case is a transposition down.</p>
+<p>Generally speaking, if <i>d[n]</i> is the input of the reading head, setting the delay in samples, the pitch transposition factor <i>t[n] </i>for delay lines is given by the following formula:</p>
+<blockquote><p><i>t[n] = 1 - (d[n] - d[n - 1]).</i></p></blockquote>
+<p>Using this formula, we can easily calculate the slope of a line – a [phasor~] object, in this case – which represents the delay variation necessary to perform the desired transposition, although this variation can only take place for a limited period given the finite length of the delay line.</p>
+<p>In order to have a continuous transposition, two overlapping reading heads are commonly used. These heads are 180º out of phase and their cycles are smoothed out using windowing functions to avoid audible discontinuities. In fact, this is the reason why such a design can be used for granular processing: each cycle of a reading head is a portion of sound which is being read, and, as we will see, this portion can be of any length. </p>
+<p>There are a number of windowing functions with different characteristics; here we are using the <i>positive sine </i>window to compensate for the statistical phase cancellation taking place when summing two signals together. (Check out one of the awesome posts by Katja Vetter to find out more: <a href="http://www.katjaas.nl/pitchshift/pitchshift.html" target="_blank">http://www.katjaas.nl/pitchshift/pitchshift.html</a>.)</p>
+<p>Now that it is possible to transpose a signal for an arbitrary amount of time, the remaining parts of the granulator are the <i>grain rate</i> – which, in this design, is linked to the grain duration – and the <i>time transposition</i> or <i>time stretching</i>.</p>
+<p>Once the slope for a given pitch transposition has been calculated, keeping the same transposition for different grain rates is only a matter of scaling down the delay variation size to have a constant slope.</p>
+<p>Time transposition, in this case, can be implemented by consistently offsetting the grains with regard to the movement of the tape (metaphorically speaking), and we can still use the transposition formula above to calculate the slope of the offset. For example, if the grains are offset at the same rate as the motion of the tape, the reading heads will always be in the same region of the buffer and we will have a ‘freeze’ effect (or zero-factor time transposition).</p>
+<p>You can also note that this design is consistent with negative transposition factors of both time and pitch, and those will result, respectively, in exploring the buffer backwards and playing the grains in reverse.</p>
+<p>You can save the text below into a plain text file with the .pd extention to try the patch. The object takes an argument which is the delay line length in milliseconds.</p>
+<p>#N canvas 104 0 956 778 10;<br>#X obj 116 200 inlet~;<br>#X obj 115 372 samphold~;<br>#X obj 249 438 *~;<br>#X obj 115 585 vd~ \$0-grain;<br>#X obj 670 144 phasor~;<br>#X obj 731 176 +~ 0.5;<br>#X obj 731 198 wrap~;<br>#X obj 731 227 s~ \$0-ph2;<br>#X obj 670 227 s~ \$0-ph1;<br>#X obj 166 348 r~ \$0-ph1;<br>#X obj 300 346 r~ \$0-ph1;<br>#X obj 227 486 r~ \$0-ph1;<br>#X obj 115 635 *~;<br>#X obj 435 372 samphold~;<br>#X obj 649 438 *~;<br>#X obj 435 585 vd~ \$0-grain;<br>#X obj 435 695 *~;<br>#X obj 486 348 r~ \$0-ph2;<br>#X obj 700 346 r~ \$0-ph2;<br>#X obj 567 557 r~ \$0-ph2;<br>#X obj 291 732 outlet~;<br>#X obj 249 373 samphold~;<br>#X obj 649 373 samphold~;<br>#X obj 510 171 /~;<br>#X obj 525 100 inlet~;<br>#X obj 510 198 *~ 1000;<br>#X obj 670 70 inlet~;<br>#X obj 359 100 inlet~;<br>#X obj 329 227 s~ \$0-position;<br>#X obj 115 318 r~ \$0-position;<br>#X obj 329 152 *~;<br>#X obj 329 177 phasor~;<br>#X text 713 70 grain rate;<br>#X text 568 100 pitch factor;<br>#X obj 329 201 *~ \$1;<br>#X obj 116 227 delwrite~ \$0-grain \$1;<br>#X obj 115 522 wrap~;<br>#X obj 435 522 wrap~;<br>#X obj 264 26 sig~ 1;<br>#X obj 264 108 /~;<br>#X obj 279 54 sig~ \$1;<br>#X obj 279 76 *~ 0.001;<br>#X obj 344 76 sig~ 1;<br>#X obj 344 129 -~;<br>#X obj 510 76 sig~ 1;<br>#X obj 510 138 -~;<br>#X obj 670 107 max~ 0;<br>#X obj 510 227 s~ \$0-size;<br>#X obj 249 318 r~ \$0-size;<br>#X obj 649 318 r~ \$0-size;<br>#X obj 435 318 r~ \$0-position;<br>#X obj 664 409 r~ \$0-ph2;<br>#X obj 264 409 r~ \$0-ph1;<br>#X obj 115 493 /~ \$1;<br>#X obj 115 553 *~ \$1;<br>#X obj 435 493 /~ \$1;<br>#X obj 435 553 *~ \$1;<br>#X text 528 318 buffer position;<br>#X text 718 318 delay variation size;<br>#X text 478 522 wrap around when margins are exceeded;<br>#X text 401 100 time factor;<br>#X obj 227 585 cos~;<br>#X obj 227 518 -~ 0.5;<br>#X obj 227 552 *~ 0.5;<br>#X obj 567 655 cos~;<br>#X obj 567 588 -~ 0.5;<br>#X obj 567 622 *~ 0.5;<br>#X connect 0 0 35 0;<br>#X connect 1 0 53 0;<br>#X connect 2 0 53 0;<br>#X connect 3 0 12 0;<br>#X connect 4 0 8 0;<br>#X connect 4 0 5 0;<br>#X connect 5 0 6 0;<br>#X connect 6 0 7 0;<br>#X connect 9 0 1 1;<br>#X connect 10 0 21 1;<br>#X connect 11 0 62 0;<br>#X connect 12 0 20 0;<br>#X connect 13 0 55 0;<br>#X connect 14 0 55 0;<br>#X connect 15 0 16 0;<br>#X connect 16 0 20 0;<br>#X connect 17 0 13 1;<br>#X connect 18 0 22 1;<br>#X connect 19 0 65 0;<br>#X connect 21 0 2 0;<br>#X connect 22 0 14 0;<br>#X connect 23 0 25 0;<br>#X connect 24 0 45 1;<br>#X connect 25 0 47 0;<br>#X connect 26 0 46 0;<br>#X connect 27 0 43 1;<br>#X connect 29 0 1 0;<br>#X connect 30 0 31 0;<br>#X connect 31 0 34 0;<br>#X connect 34 0 28 0;<br>#X connect 36 0 54 0;<br>#X connect 37 0 56 0;<br>#X connect 38 0 39 0;<br>#X connect 39 0 30 0;<br>#X connect 40 0 41 0;<br>#X connect 41 0 39 1;<br>#X connect 42 0 43 0;<br>#X connect 43 0 30 1;<br>#X connect 44 0 45 0;<br>#X connect 45 0 23 0;<br>#X connect 46 0 4 0;<br>#X connect 46 0 23 1;<br>#X connect 48 0 21 0;<br>#X connect 49 0 22 0;<br>#X connect 50 0 13 0;<br>#X connect 51 0 14 1;<br>#X connect 52 0 2 1;<br>#X connect 53 0 36 0;<br>#X connect 54 0 3 0;<br>#X connect 55 0 37 0;<br>#X connect 56 0 15 0;<br>#X connect 61 0 12 1;<br>#X connect 62 0 63 0;<br>#X connect 63 0 61 0;<br>#X connect 64 0 16 1;<br>#X connect 65 0 66 0;<br>#X connect 66 0 64 0;<br></p>
+
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<!--<div></div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="http://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/feed.xml">via RSS</a></div>-->
+      <div>
+<a href="mailto:sanfilippo.dario@gmail.com">Email</a> | <a href="https://github.com/dariosanfilippo/" target="_blank" rel="“noreferrer" noopener>Github</a> | <a href="https://scholar.google.com/citations?user=eXSEPWEAAAAJ&hl=en" target="_blank" rel="“noreferrer" noopener>Google Scholar</a> | <a href="https://soundcloud.com/dario-sanfilippo" target="_blank" rel="“noreferrer" noopener>SoundCloud</a>
+</div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

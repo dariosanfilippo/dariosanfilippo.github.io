@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Three ways to implement recursive circuits in the Faust language | Dario Sanfilippo</title>
+<meta name="generator" content="Jekyll v4.3.2">
+<meta property="og:title" content="Three ways to implement recursive circuits in the Faust language">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="This post shows examples of how to implement complex circuits in Faust.">
+<meta property="og:description" content="This post shows examples of how to implement complex circuits in Faust.">
+<link rel="canonical" href="/posts/2020/11/28/faust_recursive_circuits.html">
+<meta property="og:url" content="/posts/2020/11/28/faust_recursive_circuits.html">
+<meta property="og:site_name" content="Dario Sanfilippo">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2020-11-28T00:00:00+00:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Three ways to implement recursive circuits in the Faust language">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2020-11-28T00:00:00+00:00","datePublished":"2020-11-28T00:00:00+00:00","description":"This post shows examples of how to implement complex circuits in Faust.","headline":"Three ways to implement recursive circuits in the Faust language","mainEntityOfPage":{"@type":"WebPage","@id":"/posts/2020/11/28/faust_recursive_circuits.html"},"url":"/posts/2020/11/28/faust_recursive_circuits.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="shortcut icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="/feed.xml" title="Dario Sanfilippo">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+<script>MathJax={"tex":{"inlineMath":[["$","$"],["\\(","\\)"]],"displayMath":[["$$","$$"],["\\[","\\]"]]},"svg":{"fontCache":"global"}}</script><script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script><script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/">
+  <img class="site-favicon" title="Dario Sanfilippo" src="" onerror="this.style.display='none'">
+  Dario Sanfilippo
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/">HOME</a><a class="page-link" href="/about.html">ABOUT</a><a class="page-link" href="/portfolio.html">PORTFOLIO</a><a class="page-link" href="/events.html">EVENTS</a><a class="page-link" href="/publications.html">PUBLICATIONS</a><a class="page-link" href="/cv.html">CV</a>
+
+
+
+
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('off' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      processEscapes: true
+    }
+  };
+</script>
+
+
+<p>After a long silence, this post is about the implementation of not-so-simple recursive circuits in the <a href="faust.grame.fr">Faust language</a>. We will see a few relevant examples and the three main approaches that we can follow to implement a circuit: Faust’s diagram expressions (basic syntaxt), the <em>with</em> environment with auxiliary function definition, and the <em>letrec</em> environment.</p>
+
+<p>The Faust manual provides basic examples for the <a href="https://faustdoc.grame.fr/manual/syntax/#recursive-composition">first</a>, <a href="https://faustdoc.grame.fr/manual/syntax/#with-expression">second</a>, and <a href="https://faustdoc.grame.fr/manual/syntax/#letrec-expression">third</a> approaches. As we will see later, Faust’s basic syntax can be less concise and more complicated in some cases, whereas the remaining two approaches are easier. However, the <em>letrec</em> environment, despite being concise, is not always desirable if we want to generate diagrams that have little or no redundancy. In this post, we will implement a few circuits with feedback using all of the three approaches.</p>
+
+<p>Let’s start with a simple one-pole lowpass filter, which is essentially a scaled-down input feeding into an integrator. In the basic syntax, the tilde operator lets the signal(s) to its left through and sendsthem back into a feedback path to fill the first available input(s) in the function. The operand or group of operands immediately after the tilde operator is applied to the feedback path. The tilde operator, unlike all other basic synthax operators, is left-assiociative and has highest priority. For example, if we write:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+process = + , _ : + : + ~ _;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<p>we are summing the first two inputs, then we are sending the result together with a third input into another “+” operator, and then we are summing the result to the output itself. Of course, any feedback loop in a digital system requires at least a one-sample delay, which is the default delay in Faust’s recursive composition. Suppose that we want to add another feedback loop in the previous function that is connected to the input of the first “+” operator. We also want to multiply that feedback signal by .5. Then we can write as follows:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+process = (+ , _ : + : + ~ _) ~ *(.5);
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<p>Back to the lowpass filter, we can see the diagram below, kindly taken from the website of <a href="https://ccrma.stanford.edu/~jos/">Julius Smith</a>.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lp1p_diagram.png">
+    </div>
+</div>
+
+<p><br></p>
+
+<p>Following [Chamberlin 1985] for the design of the filter, we can write the function using basic syntax as follows:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, x) = b0 * x : + ~ *(-a1)
+    with {
+        b0 = 1 + a1;
+        a1 = exp(-w(cf)) * -1;
+        w(f) = 2 * ma.PI * f / ma.SR;
+    };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<p>Below, we can see the diagram generated by the Faust code. Note that the empty little square on a wire indicates a one-sample delay, representing the $ z^-1 $ operator in our case.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lp1p_diagram_faust_a.png">
+    </div>
+</div>
+<div class="caption">
+    Block diagram generated through basic syntax.
+</div>
+
+<p>Another way to implement the filter is by using an intermediate function and the <em>with</em> environment. I would also like to thank Oleg Nesterov who first introduced me to this technique. The intermediate function usually acts as container and defines elementary single or multiple feedback loops. The feedback loops that are sent back to the function can then be used anywhere in the inner code as they are identified by argument names, which are specified in the intermediate function (“loop”) definition:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, x) = loop ~ _
+    with {
+        loop(feedback) = b0 * x - a1 * feedback;
+        b0 = 1 + a1;
+        a1 = exp(-w(cf)) * -1;
+        w(f) = 2 * ma.PI * f / ma.SR;
+    };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lp1p_diagram_faust_b1.png">
+    </div>
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lp1p_diagram_faust_b2.png">
+    </div>
+</div>
+<div class="caption">
+    Block diagram generated through intermediate function and the <i>with</i> environment.
+</div>
+
+<p>The third way is through the <em>letrec</em> environment. Within this environment, we can define signals recursively, similarly to how recurrence equations are written:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, x) = y
+    letrec {
+        'y = b0 * x - a1 * y;
+    }
+        with {
+            b0 = 1 + a1;
+            a1 = exp(-w(cf)) * -1;
+            w(f) = 2 * ma.PI * f / ma.SR;
+        };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lp1p_diagram_faust_c1.png">
+    </div>
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lp1p_diagram_faust_c2.png">
+    </div>
+</div>
+<div class="caption">
+    Block diagram implemented through the <i>letrec</i> environment.
+</div>
+
+<p>So far, we have implemented a somewhat elementary circuit. Now, we can try to implement a first-order lowpass filter with zero-delay feedback topology. The circuit below is taken from the <a href="https://www.native-instruments.com/fileadmin/ni_media/downloads/pdf/VAFilterDesign_2.1.2.pdf?sscid=b1k4_zpwrx">book</a> by Zavalishin on virtual analogue filters design.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lptpt_diagram.png">
+    </div>
+</div>
+<div class="caption">
+    Zavalishin's first-order zero-delay feedback lowpass with resolved topology.
+</div>
+
+<p>As we can see, the implementation is not as straightforward as the previous case. It can be useful to name several points in the circuit to determine the fundamental signals to compose the whole circuit. Here, we introduce $ G = g/(1+g) $, $ v $ as the signal taken after the $ G $ multiplication, $ s $ as the state of the system, that is the output of the $ z^-1 $ operator, and $ y $ as the output of the system. Hence, we have that:</p>
+
+<p>$$ 
+\begin{align}
+&amp; v = G(x - s) \\ &amp; y = v + s \\ &amp; s = v + y <br>
+\end{align}
+$$</p>
+
+<p>If we substitute $ v $ and $ y $, then we have that:</p>
+
+<p>$$ 
+\begin{align}
+&amp; y = G(x - s) + s \\ &amp; s = 2G(x - s) + s <br>
+\end{align}
+$$</p>
+
+<p>and we can define two paths, one for the state, the other for the output of the system. Specifically, we can write the paths replacing all occurrences of $ s $ with a wire, which we will then fill with feedback loops from the state path. It is convenient to define the state first, and the output second, as the tilde operator applies to signals to its left starting from the top:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, x) = 
+    (2 * (x - _) * G + _ , // state path
+    (x - _) * G + _) ~ (_ &lt;: si.bus(4)) : ! , _ // output path
+    with {
+        G = tan(w(cf) / 2) / (1 + tan(w(cf) / 2));
+        w(f) = 2 * ma.PI * f / ma.SR;
+    };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lptpt_diagram_faust_a.png">
+    </div>
+</div>
+<div class="caption">
+    Zavalishin's first-order zero-delay feedback lowpass diagram implemented with Faust's basic syntax.
+</div>
+
+<p>As we can notice, the signal $ G(x - s) + s $ repeats twice in the diagram. However, Faust’s optimisation will make sure that the signal is computed only once. Still, if we want the diagram to be closer to the original circuit, then we can write the following, copying the signal $ G(x - s) $ internally to compose the remaining necessary signals:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, x) = 
+    (((x - _) * G &lt;: _ , _) , _ : (_ , (+ &lt;: _ , _)) : (+ , _)) ~ (_ &lt;: si.bus(2)) : ! , _
+    with {
+        G = tan(w(cf) / 2) / (1 + tan(w(cf) / 2));
+        w(f) = 2 * ma.PI * f / ma.SR;
+    };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lptpt_diagram_faust_a1.png">
+    </div>
+</div>
+<div class="caption">
+    Zavalishin's first-order zero-delay feedback lowpass improved diagram.
+</div>
+
+<p>Now, we can implement the filter using an intermediate function:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, x) = loop ~ _ : ! , _
+    with {
+        loop(fb) = (x - fb) * G &lt;: _ , +(fb) : _ , (_ &lt;: _ , _) : + , _;
+        G = tan(w(cf) / 2) / (1 + tan(w(cf) / 2));
+        w(f) = 2 * ma.PI * f / ma.SR;
+    };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lptpt_diagram_faust_b.png">
+    </div>
+</div>
+<div class="caption">
+    Zavalishin's first-order zero-delay feedback lowpass diagram implemented through intermediate function.
+</div>
+
+<p>And finally, we can use the <em>letrec</em> environment for a concise and elegant solution, although the diagram will show some redundancy:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+lowpass(cf, in) = y
+    letrec {
+        'y = (in - s) * G + s;
+        's = 2 * (in - s) * G + s;
+    }
+        with {
+            G = tan(w(cf) / 2) / (1 + tan(w(cf) / 2));
+            w(f) = 2 * ma.PI * f / ma.SR;
+        };
+process = lowpass;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/lptpt_diagram_faust_c.png">
+    </div>
+</div>
+<div class="caption">
+    Zavalishin's first-order zero-delay feedback lowpass diagram generated through the <i>letrec</i> environment.
+</div>
+
+<p>For the last example, we will implement Martin Vicanek’s beautiful <a href="https://vicanek.de/articles/QuadOsc.pdf">quadrature oscillator</a>, a recursive self-oscillating system with two states. See the circuit below.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/quadosc.png">
+    </div>
+</div>
+<div class="caption">
+    Martin Vicanek's quadrature oscillator.
+</div>
+
+<p>Here, we have a feedback system with two cross-coupled states. Hence, it is not as straightforward as with systems having only one state, for we must send each state back to the appropriate inputs. In this system, we need to define two state paths, which correspond to the two outputs of the system. Similarly to what we did earlier, we can define the states by composing the paths with the signals feeding into the $ z^-1 $ operators. Thus, the two states $ u_n $ and $ v_n $ are defined as follows:</p>
+
+<p>$$ 
+\begin{align}
+&amp; u_n = w_n - k_1(v_n + k_2 \cdot w_n) \\ &amp; v_n = v_n + k_2 \cdot w_n \\ &amp; w_n = u_n - k_1 \cdot v_n <br>
+\end{align}
+$$</p>
+
+<p>If we substitute $ w_n $, we have that:</p>
+
+<p>$$
+\begin{align}
+&amp; u_n = u_n - k_1 \cdot v_n - k_1(v_n + k_2(u_n - k_1 \cdot v_n)) \\ &amp; v_n = v_n + k_2(u_n - k_1 \cdot v_n) <br>
+\end{align}
+$$</p>
+
+<p>To start with, using basic syntax, we will simply put a wire wherever a state is fed back without distinguishing between $ u_n $ or $ v_n $:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+quadosc(f) =    (_ - k1 * _ - k1 * (_ + k2 * (_ - k1 * _)) ,    // u_n path
+                _ + k2 * (_ - k1 * _))                          // v_n path
+    with {
+        k1 = tan(ma.PI * f / ma.SR);        
+        k2 = (2 * k1) / (1 + k1 * k1);
+    };
+process = quadosc;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<p>This will lead to the following network, where the external inputs are feedback paths that need to be matched with the corresponding states.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/quadosc_faust_a1.png">
+    </div>
+</div>
+<div class="caption">
+    Intermediate implementation stage of Vicanek's oscillator.
+</div>
+
+<p>At this point, and without worrying about redundancy in the resulting diagram, the easiest thing to do is to send the two states to the feedback path and then copy and route them accordingly. We can do so using the “route” primitive, which we can call specifying the number of inputs, the number of outputs, and a set of input-output pairs to route the signals. Furthermore, we will also add a one-sample impulse to the $ u_n $ state as its initial condition must be 1.</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+quadosc(f) =    
+    (_ + Dirac - k1 * _ - k1 * (_ + k2 * (_ + Dirac - k1 * _)) ,    // u_n path
+    _ + k2 * (_ + Dirac - k1 * _))                                  // v_n path
+    ~ route(2, 8, 1, 1, 2, 2, 2, 3, 1, 4, 2, 5, 2, 6, 1, 7, 2, 8)
+    with {
+        k1 = tan(ma.PI * f / ma.SR);        
+        k2 = (2 * k1) / (1 + k1 * k1);
+        Dirac = 1 - 1';
+    };
+process = quadosc;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/quadosc_faust_a2.png">
+    </div>
+</div>
+<div class="caption">
+    Vicanek's oscillator diagram implemented through Faust's basic syntax.
+</div>
+
+<p>Next, we can see how to implement the oscillator using the second approach. It should be clear now:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+quadosc(f) = loop ~ (_ , _)
+    with {
+        loop(u_n, v_n) =    w_n - k1 * (v_n + k2 * w_n) ,   // u_n path
+                            v_n + k2 * w_n                  // v_n path
+            with {
+                w_n = Dirac + u_n - k1 * v_n;
+            };
+        k1 = tan(ma.PI * f / ma.SR);
+        k2 = (2 * k1) / (1 + k1 * k1);
+        Dirac = 1 - 1';
+    };
+process = quadosc;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/quadosc_faust_b.png">
+    </div>
+</div>
+<div class="caption">
+    Vicanek's oscillator diagram implemented through an intermediate function.
+</div>
+
+<p>Lastly, we can see how to implement the system using <em>letrec</em>:</p>
+
+<figure class="highlight"><pre><code class="language-faust" data-lang="faust"><table class="rouge-table"><tbody><tr>
+<td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td>
+<td class="code"><pre>import("stdfaust.lib");
+quadosc(f) = u_n , v_n
+    letrec {
+        'u_n = Dirac + u_n - k1 * v_n - k1 * (v_n + k2 * (Dirac + u_n - k1 * v_n));
+        'v_n = v_n + k2 * (Dirac + u_n - k1 * v_n);
+    }
+        with {
+            k1 = tan(ma.PI * f / ma.SR);
+            k2 = (2 * k1) / (1 + k1 * k1);
+            Dirac = 1 - 1';
+        };
+process = quadosc;
+</pre></td>
+</tr></tbody></table></code></pre></figure>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <img class="img-fluid rounded z-depth-1" src="/assets/img/quadosc_faust_c.png">
+    </div>
+</div>
+<div class="caption">
+    Vicanek's oscillator diagram implemented through the <i>letrec</i> environment.
+</div>
+
+<p>Overall, it seems that the <em>with</em> and <em>letrec</em> environments are best to work with. Particularly the <em>with</em> environment with auixiliary function, it allows to define temporary or intermediate signals as we did for the quadrature oscillator. Using <em>letrec</em>, instead, that would not be possible as it would introduce a delay in the auxiliary path. The basic syntax, though, is still useful when we want to generate diagrams showing the entire network topology.</p>
+
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<!--<div></div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="http://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/feed.xml">via RSS</a></div>-->
+      <div>
+<a href="mailto:sanfilippo.dario@gmail.com">Email</a> | <a href="https://github.com/dariosanfilippo/" target="_blank" rel="“noreferrer" noopener>Github</a> | <a href="https://scholar.google.com/citations?user=eXSEPWEAAAAJ&hl=en" target="_blank" rel="“noreferrer" noopener>Google Scholar</a> | <a href="https://soundcloud.com/dario-sanfilippo" target="_blank" rel="“noreferrer" noopener>SoundCloud</a>
+</div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
