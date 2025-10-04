@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="google-translate-customization" content="108d9124921d80c3-80e20d618ff053c8-g4f02ec6f3dba68b7-c">
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Granulation without windowing using delay lines and zero-crossing detection | Dario Sanfilippo</title>
+<meta name="generator" content="Jekyll v4.3.4">
+<meta property="og:title" content="Granulation without windowing using delay lines and zero-crossing detection">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="This post is a follow-up to the previous post on granulators using zero-crossing (ZC) detection. Some information has already been discussed, but more details have been added here. The main idea behind a ZC granulator is that grains start and end at a ZC. ZC can be detected by observing the sign of the product between the current sample and the previous one: zc[n] = {1, if x[n]x[n - 1] &lt; 0; 0, otherwise }, where x[n] is the input of the function. If we have a fixed audio source on a table, we can then scan the table and store all the ZC positions in an array of as many elements as the ZC occurrences so that they can be recalled at a later time. But signals can be irregular, and so can be ZC. If we want both the start and end of grains to be at a ZC, it means that the duration of each grain is variable and dependent on the signal itself. The fundamental condition for a sequence of grains of duration D without discontinuities is that each successive grain should be triggered after the time D has passed, at the first ZC occurrence. It means that the output of the granulator must be continuously inspected to detect a ZC, and such information must be sent back into the section that generates each grain. It is the minimum requirement for a continuous stream without discontinuities, although harmonics, noise, and aliasing may be introduced without further adjustments. One crucial aspect is to have consistency between the direction of the signals at the end of grain and that at the beginning of the successive one. The direction of a signal is given by the sign of its first derivative: direction_up[n] = {1, if x[n] - x[n - 1] &gt; 0; 0, otherwise};direction_down[n] = {1, if x[n] - x[n - 1] &lt; 0; 0, otherwise}. The ZC positions of the input that we want to process can then be stored into two different arrays: one for the ZC occurring in ascending signals, the other for ZC in descending signals. Similarly, the output of the granulator can be analysed for both direction and ZC so that the position of the next grain is selected from the corresponding set of ZC indexes. Another improvement to have a smoother transition between grains is to start a grain from the successive sample than the one at the ZC position. Presumably, if both the end and beginning of grains are at a ZC position, they might be at a very close value which might result in the repetition of two samples. By skipping one sample at the beginning of each grain, there is a better continuity and smoothness in the resulting signal. If the input signal is not fixed and we are using a circular buffer (CB) to update it continuously, then we can use two CB of the same size to store the ZC indexes of ascending and descending signals. To do so, we sample-and-hold (SAH) the indexes at which a ZC is detected so that any recalled position in the ZC buffers corresponds to a ZC position in the input buffer. A SAH unit has two inputs: c[n], a Boolean value, controls the sampling process; x[n] is the signal to be sampled: SAH[n]  = {x[n], if c[n] = 1; SAH[n - 1], if c[n] = 0}. If the size of the CB is S, then the writing index, i[n], cycles through integers from 0 to S-1. i[n] is the signal that we want to store in the ZC CB, whereas the conditions to trigger the SAH in ascending and descending signals are, respectively:  zc[n] AND direction_up[n],zc[n] AND direction_down[n]. In Faust, tables do not implement fractional indexes and are not ideal for pitch transposition; fractional delay lines are often used for live granular processing with pitch transposition. In the case of tables, recalling a ZC index is rather straightforward, and it is enough to read the input buffer at that position. With delay lines, since we move around the buffer by setting a delay relative to the position of the writing index, a few more steps are necessary.  In delay lines of length L samples, the writing index, i[n], cycles through integers from 0 to L - 1. This index is what we sample-and-hold when the ZC are detected and represents the time after which, relative to the beginning of the process, a ZC has occurred. It is essentially a time offset, and we can recall a ZC that has occurred at previous time P by setting the delay to i[n] - P. Of course, if P is greater than the current index i[n], then the negative value should be wrapped around the [0;L] range. A general wrapping function has the following form: wrap[n] = fractional((x[n] - min) / (max - min))(max - min) + min. By simply reorganising the input signal by arranging grains at different ZC positions in the buffer, we have a granulator without transposition. At this point, the pitch transposition of each grain can be implemented as a delay shift starting from the selected ZC position. If the desired grain rate is R, which determines the grain duration 1 / R, then the delay shift for a given pitch factor (PF) can be calculated as follows: (1 - PF)(1 / R)(line)SR, where SR is the samplerate and line is a signal that grows from 0 to 1 in 1 / R seconds. A line can be implemented as follows: y[n] = R / SR + y[n - 1]. In the image below, we can see the spectrum of a 1kHz sine wave reconstructed through grains randomly selected over the whole buffer at a rate of 100 grains per second, and pitch-shifted of a factor of 3. Of course, the process does introduce some noise but it shows that it is correct. (It may not be clear from the image but the peak is centred at 3kHz; the SNR is about 60dB.) Currently, I am particularly satisfied with the noisy textures generated by this algorithm, as the windowless design has a particular sharpness even at lower grain rates, which I could not perceive with the standard design.">
+<meta property="og:description" content="This post is a follow-up to the previous post on granulators using zero-crossing (ZC) detection. Some information has already been discussed, but more details have been added here. The main idea behind a ZC granulator is that grains start and end at a ZC. ZC can be detected by observing the sign of the product between the current sample and the previous one: zc[n] = {1, if x[n]x[n - 1] &lt; 0; 0, otherwise }, where x[n] is the input of the function. If we have a fixed audio source on a table, we can then scan the table and store all the ZC positions in an array of as many elements as the ZC occurrences so that they can be recalled at a later time. But signals can be irregular, and so can be ZC. If we want both the start and end of grains to be at a ZC, it means that the duration of each grain is variable and dependent on the signal itself. The fundamental condition for a sequence of grains of duration D without discontinuities is that each successive grain should be triggered after the time D has passed, at the first ZC occurrence. It means that the output of the granulator must be continuously inspected to detect a ZC, and such information must be sent back into the section that generates each grain. It is the minimum requirement for a continuous stream without discontinuities, although harmonics, noise, and aliasing may be introduced without further adjustments. One crucial aspect is to have consistency between the direction of the signals at the end of grain and that at the beginning of the successive one. The direction of a signal is given by the sign of its first derivative: direction_up[n] = {1, if x[n] - x[n - 1] &gt; 0; 0, otherwise};direction_down[n] = {1, if x[n] - x[n - 1] &lt; 0; 0, otherwise}. The ZC positions of the input that we want to process can then be stored into two different arrays: one for the ZC occurring in ascending signals, the other for ZC in descending signals. Similarly, the output of the granulator can be analysed for both direction and ZC so that the position of the next grain is selected from the corresponding set of ZC indexes. Another improvement to have a smoother transition between grains is to start a grain from the successive sample than the one at the ZC position. Presumably, if both the end and beginning of grains are at a ZC position, they might be at a very close value which might result in the repetition of two samples. By skipping one sample at the beginning of each grain, there is a better continuity and smoothness in the resulting signal. If the input signal is not fixed and we are using a circular buffer (CB) to update it continuously, then we can use two CB of the same size to store the ZC indexes of ascending and descending signals. To do so, we sample-and-hold (SAH) the indexes at which a ZC is detected so that any recalled position in the ZC buffers corresponds to a ZC position in the input buffer. A SAH unit has two inputs: c[n], a Boolean value, controls the sampling process; x[n] is the signal to be sampled: SAH[n]  = {x[n], if c[n] = 1; SAH[n - 1], if c[n] = 0}. If the size of the CB is S, then the writing index, i[n], cycles through integers from 0 to S-1. i[n] is the signal that we want to store in the ZC CB, whereas the conditions to trigger the SAH in ascending and descending signals are, respectively:  zc[n] AND direction_up[n],zc[n] AND direction_down[n]. In Faust, tables do not implement fractional indexes and are not ideal for pitch transposition; fractional delay lines are often used for live granular processing with pitch transposition. In the case of tables, recalling a ZC index is rather straightforward, and it is enough to read the input buffer at that position. With delay lines, since we move around the buffer by setting a delay relative to the position of the writing index, a few more steps are necessary.  In delay lines of length L samples, the writing index, i[n], cycles through integers from 0 to L - 1. This index is what we sample-and-hold when the ZC are detected and represents the time after which, relative to the beginning of the process, a ZC has occurred. It is essentially a time offset, and we can recall a ZC that has occurred at previous time P by setting the delay to i[n] - P. Of course, if P is greater than the current index i[n], then the negative value should be wrapped around the [0;L] range. A general wrapping function has the following form: wrap[n] = fractional((x[n] - min) / (max - min))(max - min) + min. By simply reorganising the input signal by arranging grains at different ZC positions in the buffer, we have a granulator without transposition. At this point, the pitch transposition of each grain can be implemented as a delay shift starting from the selected ZC position. If the desired grain rate is R, which determines the grain duration 1 / R, then the delay shift for a given pitch factor (PF) can be calculated as follows: (1 - PF)(1 / R)(line)SR, where SR is the samplerate and line is a signal that grows from 0 to 1 in 1 / R seconds. A line can be implemented as follows: y[n] = R / SR + y[n - 1]. In the image below, we can see the spectrum of a 1kHz sine wave reconstructed through grains randomly selected over the whole buffer at a rate of 100 grains per second, and pitch-shifted of a factor of 3. Of course, the process does introduce some noise but it shows that it is correct. (It may not be clear from the image but the peak is centred at 3kHz; the SNR is about 60dB.) Currently, I am particularly satisfied with the noisy textures generated by this algorithm, as the windowless design has a particular sharpness even at lower grain rates, which I could not perceive with the standard design.">
+<link rel="canonical" href="http://localhost:4000/2019/05/11/granulation-without-windowing-using-delay-lines.html">
+<meta property="og:url" content="http://localhost:4000/2019/05/11/granulation-without-windowing-using-delay-lines.html">
+<meta property="og:site_name" content="Dario Sanfilippo">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2019-05-11T15:21:03+02:00">
+<meta name="twitter:card" content="summary">
+<meta property="twitter:title" content="Granulation without windowing using delay lines and zero-crossing detection">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","dateModified":"2019-05-11T15:21:03+02:00","datePublished":"2019-05-11T15:21:03+02:00","description":"This post is a follow-up to the previous post on granulators using zero-crossing (ZC) detection. Some information has already been discussed, but more details have been added here. The main idea behind a ZC granulator is that grains start and end at a ZC. ZC can be detected by observing the sign of the product between the current sample and the previous one: zc[n] = {1, if x[n]x[n - 1] &lt; 0; 0, otherwise }, where x[n] is the input of the function. If we have a fixed audio source on a table, we can then scan the table and store all the ZC positions in an array of as many elements as the ZC occurrences so that they can be recalled at a later time. But signals can be irregular, and so can be ZC. If we want both the start and end of grains to be at a ZC, it means that the duration of each grain is variable and dependent on the signal itself. The fundamental condition for a sequence of grains of duration D without discontinuities is that each successive grain should be triggered after the time D has passed, at the first ZC occurrence. It means that the output of the granulator must be continuously inspected to detect a ZC, and such information must be sent back into the section that generates each grain. It is the minimum requirement for a continuous stream without discontinuities, although harmonics, noise, and aliasing may be introduced without further adjustments. One crucial aspect is to have consistency between the direction of the signals at the end of grain and that at the beginning of the successive one. The direction of a signal is given by the sign of its first derivative: direction_up[n] = {1, if x[n] - x[n - 1] &gt; 0; 0, otherwise};direction_down[n] = {1, if x[n] - x[n - 1] &lt; 0; 0, otherwise}. The ZC positions of the input that we want to process can then be stored into two different arrays: one for the ZC occurring in ascending signals, the other for ZC in descending signals. Similarly, the output of the granulator can be analysed for both direction and ZC so that the position of the next grain is selected from the corresponding set of ZC indexes. Another improvement to have a smoother transition between grains is to start a grain from the successive sample than the one at the ZC position. Presumably, if both the end and beginning of grains are at a ZC position, they might be at a very close value which might result in the repetition of two samples. By skipping one sample at the beginning of each grain, there is a better continuity and smoothness in the resulting signal. If the input signal is not fixed and we are using a circular buffer (CB) to update it continuously, then we can use two CB of the same size to store the ZC indexes of ascending and descending signals. To do so, we sample-and-hold (SAH) the indexes at which a ZC is detected so that any recalled position in the ZC buffers corresponds to a ZC position in the input buffer. A SAH unit has two inputs: c[n], a Boolean value, controls the sampling process; x[n] is the signal to be sampled: SAH[n]  = {x[n], if c[n] = 1; SAH[n - 1], if c[n] = 0}. If the size of the CB is S, then the writing index, i[n], cycles through integers from 0 to S-1. i[n] is the signal that we want to store in the ZC CB, whereas the conditions to trigger the SAH in ascending and descending signals are, respectively:  zc[n] AND direction_up[n],zc[n] AND direction_down[n]. In Faust, tables do not implement fractional indexes and are not ideal for pitch transposition; fractional delay lines are often used for live granular processing with pitch transposition. In the case of tables, recalling a ZC index is rather straightforward, and it is enough to read the input buffer at that position. With delay lines, since we move around the buffer by setting a delay relative to the position of the writing index, a few more steps are necessary.  In delay lines of length L samples, the writing index, i[n], cycles through integers from 0 to L - 1. This index is what we sample-and-hold when the ZC are detected and represents the time after which, relative to the beginning of the process, a ZC has occurred. It is essentially a time offset, and we can recall a ZC that has occurred at previous time P by setting the delay to i[n] - P. Of course, if P is greater than the current index i[n], then the negative value should be wrapped around the [0;L] range. A general wrapping function has the following form: wrap[n] = fractional((x[n] - min) / (max - min))(max - min) + min. By simply reorganising the input signal by arranging grains at different ZC positions in the buffer, we have a granulator without transposition. At this point, the pitch transposition of each grain can be implemented as a delay shift starting from the selected ZC position. If the desired grain rate is R, which determines the grain duration 1 / R, then the delay shift for a given pitch factor (PF) can be calculated as follows: (1 - PF)(1 / R)(line)SR, where SR is the samplerate and line is a signal that grows from 0 to 1 in 1 / R seconds. A line can be implemented as follows: y[n] = R / SR + y[n - 1]. In the image below, we can see the spectrum of a 1kHz sine wave reconstructed through grains randomly selected over the whole buffer at a rate of 100 grains per second, and pitch-shifted of a factor of 3. Of course, the process does introduce some noise but it shows that it is correct. (It may not be clear from the image but the peak is centred at 3kHz; the SNR is about 60dB.) Currently, I am particularly satisfied with the noisy textures generated by this algorithm, as the windowless design has a particular sharpness even at lower grain rates, which I could not perceive with the standard design.","headline":"Granulation without windowing using delay lines and zero-crossing detection","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2019/05/11/granulation-without-windowing-using-delay-lines.html"},"url":"http://localhost:4000/2019/05/11/granulation-without-windowing-using-delay-lines.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="icon" href="">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/typeface-noto-sans@0.0.72/index.min.css">
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="/assets/js/main.js"></script><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Dario Sanfilippo">
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css">
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
+<!-- and it's easy to individually load additional languages -->
+<script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/languages/go.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+// Init highlight js
+document.addEventListener('DOMContentLoaded', function(event) {
+  var els = document.querySelectorAll('pre code')
+
+  function addLangData(block) {
+    var outer = block.parentElement.parentElement.parentElement;
+    var lang = block.getAttribute('data-lang');
+    for (var i = 0; i < outer.classList.length; i++) {
+      var cls = outer.classList[i];
+      if (cls.startsWith('language-')) {
+        lang = cls;
+        break;
+      }
+    }
+    if (!lang) {
+      cls = block.getAttribute('class');
+      lang = cls ? cls.replace('hljs ', '') : '';
+    }
+    if (lang.startsWith('language-')) {
+      lang = lang.substr(9);
+    }
+    block.setAttribute('class', 'hljs ' + lang);
+    block.parentNode.setAttribute('data-lang', lang);
+  }
+
+  function addBadge(block) {
+    var enabled = ('true' || 'true').toLowerCase();
+    if (enabled == 'true') {
+      var pre = block.parentElement;
+      pre.classList.add('badge');
+    }
+  }
+
+  function handle(block) {
+    addLangData(block);
+    addBadge(block)
+    hljs.highlightBlock(block);
+  }
+
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    handle(el);
+  }
+});
+</script>
+
+<style>
+  /* code language badge */
+  pre.badge::before {
+    content: attr(data-lang);
+    color: #fff;
+    background-color: #ff4e00;
+    padding: 0 .5em;
+    border-radius: 0 2px;
+    text-transform: uppercase;
+    text-align: center;
+    min-width: 32px;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+  }
+
+  /* fix wrong badge display for firefox browser */
+  code > table pre::before {
+    display: none;
+  }
+</style>
+<script src="//cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.3/photoswipe.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.3/photoswipe-ui-default.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.3/photoswipe.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/photoswipe/4.1.3/default-skin/default-skin.css" rel="stylesheet">
+<style>
+  .pswp .pswp__container .pswp__img {
+    background-color: white;
+  }
+</style>
+
+<script>
+  function initPhotoSwipe() {
+    var mainEl = document.querySelector("section.main");
+
+    var imgEls = mainEl.querySelectorAll("img:not(.emoji)");
+    imgEls.forEach((imgEl) => {
+      imgEl.outerHTML = `
+    <a class="photo-swipe"
+      href="${imgEl.src}"
+      data-width="${imgEl.getAttribute("width") || imgEl.width * 2}"
+      data-height="${imgEl.getAttribute("height") || imgEl.height * 2}"
+      data-caption="${imgEl.getAttribute("caption") || imgEl.alt}"
+      target="_blank">
+      ${imgEl.outerHTML}
+    </a>`;
+    });
+
+    // Init empty gallery array
+    var container = [];
+
+    // Loop over gallery items and push it to the array
+    var linkEls = mainEl.querySelectorAll("a.photo-swipe");
+    linkEls.forEach((link) => {
+      var item = {
+        src: link.getAttribute("href"),
+        w: link.dataset.width,
+        h: link.dataset.height,
+        title: link.dataset.caption || "",
+      };
+      container.push(item);
+    });
+
+    // Define click event on gallery item
+    linkEls.forEach((link, index) => {
+      link.addEventListener("click", (event) => {
+        // Prevent location change
+        event.preventDefault();
+
+        // Define object and gallery options
+        var pswp = document.querySelector(".pswp");
+
+        var zoomLevel = 1;
+
+        // Define object and gallery options
+        var options = {
+          index: index,
+          bgOpacity: 0.85,
+          showHideOpacity: true,
+          closeOnScroll: true,
+          maxSpreadZoom: 1,
+          getDoubleTapZoom: (isMouseClick, item) => {
+            if (item.detail) {
+              zoomLevel += item.detail.origEvent.shiftKey ? -1 : 1;
+              item.detail = undefined;
+            } else {
+              zoomLevel = zoomLevel === 1 ? 2 : 1;
+            }
+            if (zoomLevel <= 1) {
+              zoomLevel = 1;
+              setTimeout(() => pswp.classList.remove("pswp--zoomed-in"), 0);
+            }
+            return item.initialZoomLevel * zoomLevel;
+          },
+        };
+
+        // Initialize PhotoSwipe
+        var gallery = new PhotoSwipe(
+          pswp,
+          PhotoSwipeUI_Default,
+          container,
+          options
+        );
+
+        gallery.init();
+
+        // Custom zoom event
+        gallery.container.addEventListener("pswpTap", (e) => {
+          gallery.currItem.detail = e.detail;
+        });
+      });
+    });
+  }
+
+  window.addEventListener("load", initPhotoSwipe);
+</script>
+
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+</head>
+<body>
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+  <!-- Background of PhotoSwipe.
+           It's a separate element as animating opacity is faster than rgba(). -->
+  <div class="pswp__bg"></div>
+  <!-- Slides wrapper with overflow:hidden. -->
+  <div class="pswp__scroll-wrap">
+    <!-- Container that holds slides.
+              PhotoSwipe keeps only 3 of them in the DOM to save memory.
+              Don't modify these 3 pswp__item elements, data is added later on. -->
+    <div class="pswp__container">
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+      <div class="pswp__item"></div>
+    </div>
+    <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+    <div class="pswp__ui pswp__ui--hidden">
+      <div class="pswp__top-bar">
+        <!--  Controls are self-explanatory. Order can be changed. -->
+        <div class="pswp__counter"></div>
+        <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+        <button class="pswp__button pswp__button--share" title="Share"></button>
+        <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+        <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+        <!-- element will get class pswp__preloader--active when preloader is running -->
+        <div class="pswp__preloader">
+          <div class="pswp__preloader__icn">
+            <div class="pswp__preloader__cut">
+              <div class="pswp__preloader__donut"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+        <div class="pswp__share-tooltip"></div>
+      </div>
+      <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+      <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+      <div class="pswp__caption">
+        <div class="pswp__caption__center"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<header class="site-header " role="banner">
+
+  <div class="wrapper">
+    <div class="site-header-inner">
+<span class="site-brand"><a class="site-brand-inner" rel="author" href="/">
+  <img class="site-favicon" title="Dario Sanfilippo" src="" onerror="this.style.display='none'">
+  Dario Sanfilippo
+</a>
+</span><nav class="site-nav">
+          <input type="checkbox" id="nav-trigger" class="nav-trigger">
+          <label for="nav-trigger">
+            <span class="menu-icon">
+              <svg viewbox="0 0 18 15" width="18px" height="15px">
+                <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+              </svg>
+            </span>
+          </label>
+
+          <div class="trigger">
+<a class="page-link" href="/">HOME</a><a class="page-link" href="/about.html">ABOUT</a><a class="page-link" href="/portfolio.html">PORTFOLIO</a><a class="page-link" href="/events.html">EVENTS</a><a class="page-link" href="/publications.html">PUBLICATIONS</a><a class="page-link" href="/cv.html">CV</a>
+
+
+
+
+</div>
+        </nav>
+</div>
+  </div>
+</header>
+
+<script>
+  function initHeader() {
+    var lastScrollY = getScrollPos().y;
+    var documentElement = document.documentElement;
+
+    function storeScrollData() {
+      var y = getScrollPos().y;var scrollStatus = "";
+
+      if (y <= 0) {
+        scrollStatus = "top";
+      } else if ((window.innerHeight + y) >= document.body.offsetHeight) {
+        scrollStatus = "bottom";
+      } else {
+        var isScrollDown = (y - lastScrollY > 0) ? true : false;
+        scrollStatus = isScrollDown ? "down" : "up";
+      }
+
+      lastScrollY = y;
+      documentElement.setAttribute("data-scroll-status", scrollStatus);
+    }
+
+    window.addEventListener('scroll', function(e) {
+      storeScrollData();
+    });
+
+    storeScrollData();
+  }
+  document.addEventListener('DOMContentLoaded', initHeader);
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  function hashLocate(hashValue) {
+    hashValue = hashValue.replace(/^.*#h-/, '');
+    hashValue = decodeURIComponent(hashValue);
+    var element = document.getElementById(hashValue);
+
+    if (!element) {
+      return;
+    }
+
+    var header = document.querySelector('header.site-header');
+    var headerRect = header.getBoundingClientRect();
+    var headerTop = Math.floor(headerRect.top);
+    var headerHeight = Math.floor(headerRect.height);
+    var scrollPos = getScrollPos();
+    var offsetY = element.offsetTop - (headerTop + headerHeight + 20);
+
+    if (offsetY == scrollPos.y) {
+      return;
+    }
+
+    if (headerTop == 0  && offsetY > scrollPos.y) {
+      offsetY += headerHeight + 2;
+    } else if (headerTop < 0  && offsetY < scrollPos.y) {
+      offsetY -= headerHeight - 2;
+    }
+
+    smoothScrollTo(offsetY);
+  }
+
+  // The first event occurred
+  window.addEventListener('load', function(event) {
+    if (window.location.hash) {
+      hashLocate(window.location.hash);
+    }
+  });
+
+  // The first event occurred
+  window.addEventListener('click', function(event) {
+    if (event.target.tagName.toLowerCase() == 'a') {
+      hashLocate(event.target.getAttribute('href'));
+    }
+  });
+</script>
+<div class="theme-toggle">
+  <input type="checkbox" id="theme-switch">
+  <label for="theme-switch">
+    <div class="toggle"></div>
+    <div class="names">
+      <p class="light">Light</p>
+      <p class="dark">Dark</p>
+    </div>
+  </label>
+</div>
+
+
+
+
+<script>
+  (function() {
+    var sw = document.getElementById('theme-switch');
+    var html = document.getElementsByTagName('html')[0];
+    var nightModeOption = ('off' || 'auto').toLowerCase();
+    var storage = nightModeOption === 'manual'
+        ? localStorage
+        : sessionStorage;
+    var themeData = loadThemeData();
+
+    function saveThemeData(data) {
+      storage.setItem('theme', JSON.stringify(data));
+    }
+
+    function loadThemeData() {
+      var data = storage.getItem('theme');
+      try {
+        data = JSON.parse(data ? data : '');
+      } catch(e) {
+        data = { nightShift: undefined, autoToggleAt: 0 };
+        saveThemeData(data);
+      }
+      return data;
+    }
+
+    function handleThemeToggle(nightShift) {
+      themeData.nightShift = nightShift;
+      saveThemeData(themeData);
+      html.dataset.theme = nightShift ? 'dark' : 'light';
+      setTimeout(function() {
+        sw.checked = nightShift ? true : false;
+      }, 50);
+    }
+
+    function autoThemeToggle() {
+      // Next time point of theme toggle
+      var now = new Date();
+      var toggleAt = new Date();
+      var hours = now.getHours();
+      var nightShift = hours >= 19 || hours <=7;
+
+      if (nightShift) {
+        if (hours > 7) {
+          toggleAt.setDate(toggleAt.getDate() + 1);
+        }
+        toggleAt.setHours(7);
+      } else {
+        toggleAt.setHours(19);
+      }
+
+      toggleAt.setMinutes(0);
+      toggleAt.setSeconds(0);
+      toggleAt.setMilliseconds(0)
+
+      var delay = toggleAt.getTime() - now.getTime();
+
+      // auto toggle theme mode
+      setTimeout(function() {
+        handleThemeToggle(!nightShift);
+      }, delay);
+
+      return {
+        nightShift: nightShift,
+        toggleAt: toggleAt.getTime()
+      };
+    }
+
+    // Listen the theme toggle event
+    sw.addEventListener('change', function(event) {
+      handleThemeToggle(event.target.checked);
+    });
+
+    if (nightModeOption == 'auto') {
+      var data = autoThemeToggle();
+
+      // Toggle theme by local setting
+      if (data.toggleAt > themeData.autoToggleAt) {
+        themeData.autoToggleAt = data.toggleAt;
+        handleThemeToggle(data.nightShift);
+      } else {
+        handleThemeToggle(themeData.nightShift);
+      }
+    } else if (nightModeOption == 'manual') {
+      handleThemeToggle(themeData.nightShift);
+    } else {
+      var nightShift = themeData.nightShift;
+      if (nightShift === undefined) {
+        nightShift = nightModeOption === 'on';
+      }
+      handleThemeToggle(nightShift);
+    }
+  })();
+</script>
+<div id="click-to-top" class="click-to-top">
+  <i class="fa fa-arrow-up"></i>
+</div>
+<script>
+  (function () {
+    const clickToTop = document.getElementById('click-to-top');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 100) {
+        clickToTop.classList.add('show')
+      }else {
+        clickToTop.classList.remove('show')
+      }
+    });
+    clickToTop.addEventListener('click', () => {
+      window.smoothScrollTo(0);
+    });
+  })();
+</script>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <div class="framework">
+  <section class="main">
+
+     <div class="post">
+  <section>
+
+
+
+
+
+
+
+
+
+<header class="post-header">
+  <h1 class="post-title p-name" itemprop="name headline">Granulation without windowing using delay lines and zero-crossing detection</h1>
+  <h2 class="post-subtitle"></h2>
+
+  <p class="post-meta">
+    <time class="dt-published" datetime="2019-05-11T15:21:03+02:00" itemprop="datePublished"><i class="fa fa-calendar"></i> 11 May, 2019
+    </time>
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <span class="post-reading-time left-vsplit"><i class="fa fa-clock-o"></i> About 6 mins</span>
+  </p></header>
+<article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <div class="post-content e-content" itemprop="articleBody">
+
+      <p>This post is a follow-up to the previous post on granulators using zero-crossing (ZC) detection. Some information has already been discussed, but more details have been added here.</p>
+<p>The main idea behind a ZC granulator is that grains start and end at a ZC. ZC can be detected by observing the sign of the product between the current sample and the previous one:</p>
+<p>zc[n] = {1, if x[n]x[n - 1] &lt; 0; 0, otherwise },</p>
+<p>where x[n] is the input of the function. If we have a fixed audio source on a table, we can then scan the table and store all the ZC positions in an array of as many elements as the ZC occurrences so that they can be recalled at a later time. But signals can be irregular, and so can be ZC. If we want both the start and end of grains to be at a ZC, it means that the duration of each grain is variable and dependent on the signal itself.</p>
+<p>The fundamental condition for a sequence of grains of duration D without discontinuities is that each successive grain should be triggered after the time D has passed, at the first ZC occurrence. It means that the output of the granulator must be continuously inspected to detect a ZC, and such information must be sent back into the section that generates each grain. It is the minimum requirement for a continuous stream without discontinuities, although harmonics, noise, and aliasing may be introduced without further adjustments.</p>
+<p>One crucial aspect is to have consistency between the direction of the signals at the end of grain and that at the beginning of the successive one. The direction of a signal is given by the sign of its first derivative:</p>
+<p>direction_up[n] = {1, if x[n] - x[n - 1] &gt; 0; 0, otherwise};<br>direction_down[n] = {1, if x[n] - x[n - 1] &lt; 0; 0, otherwise}.</p>
+<p>The ZC positions of the input that we want to process can then be stored into two different arrays: one for the ZC occurring in ascending signals, the other for ZC in descending signals. Similarly, the output of the granulator can be analysed for both direction and ZC so that the position of the next grain is selected from the corresponding set of ZC indexes.</p>
+<p>Another improvement to have a smoother transition between grains is to start a grain from the successive sample than the one at the ZC position. Presumably, if both the end and beginning of grains are at a ZC position, they might be at a very close value which might result in the repetition of two samples. By skipping one sample at the beginning of each grain, there is a better continuity and smoothness in the resulting signal.</p>
+<p>If the input signal is not fixed and we are using a circular buffer (CB) to update it continuously, then we can use two CB of the same size to store the ZC indexes of ascending and descending signals. To do so, we sample-and-hold (SAH) the indexes at which a ZC is detected so that any recalled position in the ZC buffers corresponds to a ZC position in the input buffer. A SAH unit has two inputs: c[n], a Boolean value, controls the sampling process; x[n] is the signal to be sampled:</p>
+<p>SAH[n]  = {x[n], if c[n] = 1; SAH[n - 1], if c[n] = 0}.</p>
+<p>If the size of the CB is S, then the writing index, i[n], cycles through integers from 0 to S-1. i[n] is the signal that we want to store in the ZC CB, whereas the conditions to trigger the SAH in ascending and descending signals are, respectively: </p>
+<p>zc[n] AND direction_up[n],<br>zc[n] AND direction_down[n].</p>
+<p>In Faust, tables do not implement fractional indexes and are not ideal for pitch transposition; fractional delay lines are often used for live granular processing with pitch transposition. In the case of tables, recalling a ZC index is rather straightforward, and it is enough to read the input buffer at that position. With delay lines, since we move around the buffer by setting a delay relative to the position of the writing index, a few more steps are necessary. </p>
+<p>In delay lines of length L samples, the writing index, i[n], cycles through integers from 0 to L - 1. This index is what we sample-and-hold when the ZC are detected and represents the time after which, relative to the beginning of the process, a ZC has occurred. It is essentially a time offset, and we can recall a ZC that has occurred at previous time P by setting the delay to i[n] - P. Of course, if P is greater than the current index i[n], then the negative value should be wrapped around the [0;L] range. A general wrapping function has the following form:</p>
+<p>wrap[n] = fractional((x[n] - min) / (max - min))(max - min) + min.</p>
+<p>By simply reorganising the input signal by arranging grains at different ZC positions in the buffer, we have a granulator without transposition. At this point, the pitch transposition of each grain can be implemented as a delay shift starting from the selected ZC position. If the desired grain rate is R, which determines the grain duration 1 / R, then the delay shift for a given pitch factor (PF) can be calculated as follows:</p>
+<p>(1 - PF)(1 / R)(line)SR,</p>
+<p>where SR is the samplerate and line is a signal that grows from 0 to 1 in 1 / R seconds. A line can be implemented as follows:</p>
+<p>y[n] = R / SR + y[n - 1].</p>
+<p>In the image below, we can see the spectrum of a 1kHz sine wave reconstructed through grains randomly selected over the whole buffer at a rate of 100 grains per second, and pitch-shifted of a factor of 3. Of course, the process does introduce some noise but it shows that it is correct. (It may not be clear from the image but the peak is centred at 3kHz; the SNR is about 60dB.)</p>
+<figure data-orig-width="3584" data-orig-height="2324" class="tmblr-full"><img src="https://64.media.tumblr.com/53526fa2a6990c52912f91c882c20ba8/tumblr_inline_prccstmC521qlphda_540.png" alt="image" data-orig-width="3584" data-orig-height="2324"></figure><p>Currently, I am particularly satisfied with the noisy textures generated by this algorithm, as the windowless design has a particular sharpness even at lower grain rates, which I could not perceive with the standard design.</p>
+
+
+    </div>
+
+</article>
+<div class="post-nav">
+<a class="previous" href="/2019/04/21/early-experiments-with-granulators-and.html" title="Early experiments with granulators and zero-crossing detection">Early experiments with granulators and zero-crossing...</a><a class="next" href="/2020/04/16/a-few-more-thoughts-on-zero-crossing-granular.html" title="A few more thoughts on zero-crossing granular processing">A few more thoughts on zero-crossing...</a>
+</div>
+<div class="post-related">
+      <div>Related Articles</div>
+      <ul>
+        <li><a class="post-link" href="/posts/2020/11/28/faust_recursive_circuits.html" title="A few more thoughts on zero-crossing granular processing">Three ways to implement recursive circuits in the Faust language</a></li>
+<li><a class="post-link" href="/2019/04/21/early-experiments-with-granulators-and.html" title="A few more thoughts on zero-crossing granular processing">Early experiments with granulators and zero-crossing detection</a></li>
+<li><a class="post-link" href="/2013/04/13/recursive-asynchronous-granular-synthesis.html" title="A few more thoughts on zero-crossing granular processing">Recursive asynchronous granular synthesis</a></li>
+<li><a class="post-link" href="/2017/12/31/dariosanfilippopd-externals.html" title="A few more thoughts on zero-crossing granular processing">dariosanfilippo/pd-externals</a></li>
+</ul>
+    </div>
+<div class="post-comments"></div></section>
+</div>
+
+
+  </section>
+  <section class="sidebar" style="margin-left: 15px;">
+    <!-- Get sidebar items --><style type="text/css" media="screen">
+.post-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+</style>
+
+<div class="post-menu">
+  <div class="post-menu-title">TOC</div>
+  <div class="post-menu-content"></div>
+</div>
+
+<script>
+  function generateContent() {
+    var menu = document.querySelector(".post-menu");
+    var menuContent =  menu.querySelector(".post-menu-content");
+    var headings = document.querySelector(".post-content").querySelectorAll("h2, h3, h4, h5, h6");
+
+    // Hide menu when no headings
+    if (headings.length === 0) {
+      return menu.style.display = "none";
+    }
+
+    // Generate post menu
+    var menuHTML = '';
+    for (var i = 0; i < headings.length; i++) {
+      var h = headings[i];
+      menuHTML += (
+        '<li class="h-' + h.tagName.toLowerCase() + '">'
+        + '<a href="#h-' + h.getAttribute('id') + '">' + h.textContent + '</a></li>');
+    }
+
+    menuContent.innerHTML = '<ul>' + menuHTML + '</ul>';
+
+    // The header element
+    var header = document.querySelector('header.site-header');
+
+    function doMenuCollapse(index, over_items) {
+      var items = menuContent.firstChild.children;
+
+      if (over_items == undefined) {
+        over_items = 20;
+      }
+
+      if (items.length < over_items) {
+        return;
+      }
+
+      var activeItem = items[index];
+      var beginItem = activeItem
+      var endItem = activeItem
+      var beginIndex = index;
+      var endIndex = index + 1;
+      while (beginIndex >= 0
+        && !items[beginIndex].classList.contains('h-h2')) {
+        beginIndex -= 1;
+      }
+      while (endIndex < items.length
+        && !items[endIndex].classList.contains('h-h2')) {
+        endIndex += 1;
+      }
+      for (var i = 0; i < beginIndex; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+      for (var i = beginIndex + 1; i < endIndex; i++) {
+        item = items[i]
+        // if (!item.classList.contains('h-h2')) {
+          item.style.display = '';
+        // }
+      }
+      for (var i = endIndex; i < items.length; i++) {
+        item = items[i]
+        if (!item.classList.contains('h-h2')) {
+          item.style.display = 'none';
+        }
+      }
+    }
+
+    // Init menu collapsed
+    doMenuCollapse(-1);
+
+    // Active the menu item
+    window.addEventListener('scroll', function (event) {
+      var lastActive = menuContent.querySelector('.active');
+      var changed = true;
+      var activeIndex = -1;
+      for (var i = headings.length - 1; i >= 0; i--) {
+        var h = headings[i];
+        var headingRect = h.getBoundingClientRect();
+        var headerRect = header.getBoundingClientRect();
+        var headerTop = Math.floor(headerRect.top);
+        var headerHeight = Math.floor(headerRect.height);
+        var headerHeight = headerTop + headerHeight + 20;
+        if (headingRect.top <= headerHeight) {
+          var id = 'h-' + h.getAttribute('id');
+          var a = menuContent.querySelector('a[href="#' + id  + '"]');
+          var curActive = a.parentNode;
+          if (curActive) {
+            curActive.classList.add('active');
+            activeIndex = i;
+          }
+          if (lastActive == curActive) {
+            changed = false;
+          }
+          break;
+        }
+      }
+      if (changed) {
+        if (lastActive) {
+          lastActive.classList.remove('active');
+        }
+        doMenuCollapse(activeIndex);
+      }
+      event.preventDefault();
+    });
+  }
+  generateContent();
+</script>
+</section>
+</div>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+    <div class="site-footer-inner">
+<div></div>
+      <div>Powered by <a title="Jekyll is a simple, blog-aware, static site
+      generator." href="https://jekyllrb.com/">Jekyll</a> &amp; <a title="Yat, yet
+      another theme." href="https://github.com/jeffreytse/jekyll-theme-yat">Yat Theme</a>.</div>
+      <div class="footer-col rss-subscribe">Subscribe <a href="/feed.xml">via RSS</a>
+</div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

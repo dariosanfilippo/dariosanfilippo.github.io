@@ -5,6 +5,7 @@ date: 2020-12-28
 description: This post discusses insights gained over a few years of audio programming to implement robust Faust/C++ software, particularly when dealing with infinity and NaN values.
 categories: Posts
 tags: audio-programming
+math: true
 ---
 
 Faust is a high-level programming language for audio based on C++ where several implementation-related low-level issues are handled by the Faust compiler. However, Faust still allows for a certain degree of freedom in its operations that may result in undesired behaviours for the domain of audio streams. This blog post shows a few examples where the special values of $ \mathit{inf} $ and $ NaN $ can be generated and how to avoid that. As we will see, $ \mathit{inf} $ and $ NaN $ values are problematic for audio streams as they follow peculiar arithmetic and relational rules.

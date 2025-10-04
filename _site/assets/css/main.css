@@ -178,20 +178,20 @@ table {
   margin-bottom: 30px;
   width: 100%;
   text-align: left;
-  color: #525252;
+  color: rgb(81.75, 81.75, 81.75);
   border-collapse: collapse;
   overflow: auto;
 }
 table tr:nth-child(even) {
-  background-color: #f7f7f7;
+  background-color: rgb(247.3, 247.3, 247.3);
 }
 table th, table td {
   padding: 10px 15px;
 }
 table th {
-  background-color: #f0f0f0;
-  border: 1px solid #dedede;
-  border-bottom-color: #c9c9c9;
+  background-color: rgb(239.65, 239.65, 239.65);
+  border: 1px solid rgb(221.8, 221.8, 221.8);
+  border-bottom-color: rgb(201.4, 201.4, 201.4);
 }
 table td {
   border: 1px solid #e8e8e8;
@@ -383,8 +383,8 @@ html[data-scroll-status=down] .framework .sidebar {
  */
 .site-footer {
   font-size: 14px;
-  color: #404040;
-  background-color: #f2f2f2;
+  color: rgb(63.75, 63.75, 63.75);
+  background-color: rgb(242.25, 242.25, 242.25);
   text-align: left;
   transition: background-color 0.2s;
 }
@@ -396,7 +396,7 @@ html[data-scroll-status=down] .framework .sidebar {
   color: #ff5100;
 }
 .site-footer a:hover {
-  color: #ff7433;
+  color: rgb(255, 115.8, 51);
 }
 
 .copyleft {
@@ -592,7 +592,10 @@ html[data-scroll-status=down] .framework .sidebar {
 .post .post-content img, .post .post-content svg, .post .post-content iframe {
   margin-left: auto;
   margin-right: auto;
+}
+.post .post-content img:not(.emoji), .post .post-content svg, .post .post-content iframe {
   display: block;
+  max-height: 50vh;
 }
 .post .post-content h2, .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
   margin: 60px 0 19px;
@@ -687,10 +690,12 @@ html[data-scroll-status=down] .framework .sidebar {
 }
 .page-archives .archives-time {
   font-size: 21px;
-  margin-bottom: 8px;
 }
 .page-archives .archives-time:not(:first-child) {
   margin-top: 18px;
+}
+.page-archives .archives-time {
+  margin-bottom: 8px;
 }
 .page-archives .post-meta {
   font-size: 12.25px;
@@ -854,11 +859,11 @@ html[data-scroll-status=down] .framework .sidebar {
   font-size: 12.25px;
   color: #828282;
 }
-.page-segments li a {
-  color: #303030;
-}
 .page-segments li a.post-link {
   margin-left: 5px;
+}
+.page-segments li a {
+  color: #303030;
 }
 .page-segments li a:hover {
   color: #000;
@@ -977,7 +982,10 @@ html[data-theme=dark] .page-segments li a:visited:after {
 html[data-theme=dark] .page-segments li a:after {
   color: #0e0e0e;
 }
-html[data-theme=dark] .post .post-content img:not([raw]) {
+html[data-theme=dark] .post .post-header {
+  border-bottom: 1px solid #555;
+}
+html[data-theme=dark] .post .post-content img:not(.emoji):not([raw]) {
   background-color: rgba(255, 255, 255, 0.2);
 }
 html[data-theme=dark] .post-related > *:first-child {
@@ -1028,7 +1036,6 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
   margin-right: 60px;
   margin-left: auto;
   transition: 0.3s cubic-bezier(0.4, 0.03, 0, 1);
-  /* Toggle */
 }
 .theme-toggle label, .theme-toggle .toggle {
   border-radius: 100px;
@@ -1066,6 +1073,9 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
 }
 .theme-toggle [type=checkbox] {
   display: none;
+}
+.theme-toggle {
+  /* Toggle */
 }
 .theme-toggle [type=checkbox]:checked ~ label .toggle {
   transform: translateX(100%);
@@ -1137,7 +1147,7 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
 .post-menu .post-menu-content ul a {
   display: flex;
   padding: 2px 8px;
-  color: #2c2c2c;
+  color: rgb(43.5, 43.5, 43.5);
 }
 .post-menu .post-menu-content ul a * {
   pointer-events: none;
@@ -1153,7 +1163,7 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
   margin-left: -2px;
 }
 .post-menu .post-menu-content ul .active:hover {
-  background-color: #f1f0f1;
+  background-color: rgb(240.9692307692, 240.2307692308, 240.9692307692);
 }
 .post-menu .post-menu-content ul .active a {
   color: #121416;
@@ -1186,7 +1196,7 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
   transition: background 0.2s;
 }
 .common-list li a:hover {
-  background-color: #eeeeee;
+  background-color: rgb(238.2, 238.2, 238.2);
 }
 .common-list li span {
   font-size: 11.2px;
@@ -1202,12 +1212,6 @@ html[data-theme=dark] .post-menu .post-menu-content ul a:hover {
 /* OVERRIDE GOOGLE TRANSLATE WIDGET CSS BEGIN */
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value {
   vertical-align: top !important;
-  /* Remove the down arrow */
-  /* when dropdown open */
-  /* after clicked/touched */
-  /* on page load (not yet touched or clicked) */
-  /* Remove span with left border line | (next to the arrow) in Chrome & Firefox */
-  /* Remove span with left border line | (next to the arrow) in Edge & IE11 */
 }
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value:hover {
   text-decoration: none;
@@ -1218,17 +1222,33 @@ div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span:hover {
   color: white;
 }
+div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value {
+  /* Remove the down arrow */
+  /* when dropdown open */
+}
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span[style="color: rgb(213, 213, 213);"] {
   display: none;
+}
+div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value {
+  /* after clicked/touched */
 }
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span[style="color: rgb(118, 118, 118);"] {
   display: none;
 }
+div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value {
+  /* on page load (not yet touched or clicked) */
+}
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span[style="color: rgb(155, 155, 155);"] {
   display: none;
 }
+div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value {
+  /* Remove span with left border line | (next to the arrow) in Chrome & Firefox */
+}
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span[style="border-left: 1px solid rgb(187, 187, 187);"] {
   display: none;
+}
+div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value {
+  /* Remove span with left border line | (next to the arrow) in Edge & IE11 */
 }
 div#google_translate_element div.goog-te-gadget-simple a.goog-te-menu-value span[style="border-left-color: rgb(187, 187, 187); border-left-width: 1px; border-left-style: solid;"] {
   display: none;
@@ -1279,7 +1299,7 @@ div#google_translate_element a.goog-te-menu-value:before {
 }
 
 /* HIDE the google translate toolbar */
-.goog-te-banner-frame.skiptranslate {
+.skiptranslate {
   display: none !important;
   border: none;
   box-shadow: 0 0;
@@ -1292,7 +1312,7 @@ body {
 
 /* OVERRIDE GOOGLE TRANSLATE WIDGET CSS END */
 .ct-language-selected, .ct-language-dropdown li:hover {
-  background-color: #f2f2f2 !important;
+  background-color: rgb(242.25, 242.25, 242.25) !important;
 }
 
 .ct-language-dropdown {
@@ -1374,6 +1394,53 @@ body {
 
 .gitment-heart-icon {
   fill: #ff0808;
+}
+
+.click-to-top {
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  right: 60px;
+  bottom: 48px;
+  background: white;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(10px);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.15);
+  font-size: 24px;
+  user-select: none;
+}
+@media screen and (max-width: 1024px) {
+  .click-to-top {
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
+    right: 35px;
+    font-size: 20px;
+  }
+}
+@media screen and (max-width: 600px) {
+  .click-to-top {
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    right: 20px;
+    font-size: 16px;
+  }
+}
+
+.click-to-top.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+html[data-theme=dark] .click-to-top {
+  background: #34323D;
 }
 
 /*# sourceMappingURL=main.css.map */

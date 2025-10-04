@@ -1,3 +1,5 @@
+theme: jekyll-theme-yat
+
 # Welcome to Jekyll!
 #
 # About Theme
@@ -216,3 +218,8 @@ plugins:
   - jekyll-sitemap
   - jekyll-paginate
   - jekyll-spaceship
+
+# KaTeX / MathJax
+math:
+  enable: true
+  engine: 'MathJax'
